@@ -1,0 +1,6 @@
+build/
+
+contracts/metacoin
+random/
+test/metacoin.js
+test/TestMetaCoin.sol
