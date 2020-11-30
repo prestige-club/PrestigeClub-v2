@@ -331,8 +331,8 @@ contract PrestigeClub is Ownable() {
             for(uint40 day = length - dayz ; day < length ; day++){
 
 
-                uint32 numUsers = states[day].totalUsers;
-                uint112 streamline = uint112(states[day].totalDeposits.safemul(numUsers - users[adr].position)).div(numUsers);
+                uint112 numUsers = states[day].totalUsers;
+                uint112 streamline = uint112(states[day].totalDeposits.safemul(numUsers.sub(users[adr].position))).div(numUsers);
 
 
                 uint112 payout_day = 0; //TODO Merge into poolpayout, only for debugging
@@ -510,6 +510,7 @@ contract PrestigeClub is Ownable() {
     //Endpoint to withdraw payouts
     function withdraw(uint112 amount) public {
         
+        triggerCalculation();
         updatePayout(msg.sender);
 
         require(amount > minWithdraw, "Minimum Withdrawal amount not met");
