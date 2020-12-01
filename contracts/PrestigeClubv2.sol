@@ -112,6 +112,8 @@ contract PrestigeClub is Ownable() {
         uint112 directSum;
         uint40 lastPayout;
 
+        uint40 lastPayedOut; //Point in time, when the last Payout was made
+
         uint112[5] downlineVolumes;
     }
     
@@ -509,7 +511,10 @@ contract PrestigeClub is Ownable() {
     
     //Endpoint to withdraw payouts
     function withdraw(uint112 amount) public {
-        
+
+        require(users[msg.sender].lastPayedOut + 12 hours < block.timestamp, "Withdrawal too soon");
+        require(amount.mul(3) < users[msg.sender].deposit, "Amount was too big for a single withdrawal");
+
         triggerCalculation();
         updatePayout(msg.sender);
 
@@ -519,6 +524,8 @@ contract PrestigeClub is Ownable() {
         uint112 transfer = amount * 19 / 20;
         
         users[msg.sender].payout -= amount;
+
+        users[msg.sender].lastPayedOut = uint40(block.timestamp);
         
         payable(msg.sender).transfer(transfer);
         
