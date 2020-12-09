@@ -1,95 +1,31 @@
 pragma solidity 0.6.8;
 
 import "./libraries/SafeMath112.sol";
+import "./IERC20.sol";
+import "./Ownable.sol";
 
 // SPDX-License-Identifier: MIT
 
-library SafeMath128{
+// library SafeMath128{
 
-    //Custom addition
-    function safemul(uint128 a, uint128 b) internal pure returns (uint128) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
+//     //Custom addition
+//     function safemul(uint128 a, uint128 b) internal pure returns (uint128) {
+//         // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+//         // benefit is lost if 'b' is also tested.
+//         // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+//         if (a == 0) {
+//             return 0;
+//         }
 
-        uint128 c = a * b;
-        if(!(c / a == b)){
-            c = (2**128)-1;
-        }
-        // require(c / a == b, "SafeMath: multiplication overflow");
+//         uint128 c = a * b;
+//         if(!(c / a == b)){
+//             c = (2**128)-1;
+//         }
+//         // require(c / a == b, "SafeMath: multiplication overflow");
 
-        return c;
-    }
-}
-
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        address msgSender = msg.sender;
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == msg.sender, "Caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    // function renounceOwnership() public onlyOwner {
-    //     emit OwnershipTransferred(_owner, address(0));
-    //     _owner = address(0);
-    // }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "New owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-
-}
+//         return c;
+//     }
+// }
 
 //Restrictions:
 //only 2^32 Users
@@ -98,7 +34,7 @@ contract Ownable {
 contract PrestigeClub is Ownable() {
 
     using SafeMath112 for uint112;
-    using SafeMath128 for uint128;
+    // using SafeMath128 for uint128;
 
     struct User {
         uint112 deposit; //265 bits together
@@ -159,58 +95,64 @@ contract PrestigeClub is Ownable() {
     }
     
     uint40 public pool_last_draw;
+
+    IERC20 peth;
     
-    constructor() public {
+    constructor(address erc20Adr) public {
  
         uint40 timestamp = uint40(block.timestamp);
         pool_last_draw = timestamp - (timestamp % payout_interval) - (2 * payout_interval);
 
+        peth = IERC20(erc20Adr);
 
-        pools[0] = Pool(3 ether, 1, 3 ether, 130, 0);
-        pools[1] = Pool(15 ether, 3, 5 ether, 130, 0);
-        pools[2] = Pool(15 ether, 4, 44 ether, 130, 0);
-        pools[3] = Pool(30 ether, 10, 105 ether, 130, 0);
-        pools[4] = Pool(45 ether, 15, 280 ether, 130, 0);
-        pools[5] = Pool(60 ether, 20, 530 ether, 130, 0);
-        pools[6] = Pool(150 ether, 20, 1470 ether, 80, 0);
-        pools[7] = Pool(300 ether, 20, 2950 ether, 80, 0);
+        // pools[0] = Pool(3 ether, 1, 3 ether, 130, 0);
+        // pools[1] = Pool(15 ether, 3, 5 ether, 130, 0);
+        // pools[2] = Pool(15 ether, 4, 44 ether, 130, 0);
+        // pools[3] = Pool(30 ether, 10, 105 ether, 130, 0);
+        // pools[4] = Pool(45 ether, 15, 280 ether, 130, 0);
+        // pools[5] = Pool(60 ether, 20, 530 ether, 130, 0);
+        // pools[6] = Pool(150 ether, 20, 1470 ether, 80, 0);
+        // pools[7] = Pool(300 ether, 20, 2950 ether, 80, 0);
 
-        downlineBonuses[0] = DownlineBonusStage(3, 50);
-        downlineBonuses[1] = DownlineBonusStage(4, 100);
-        downlineBonuses[2] = DownlineBonusStage(5, 160);
-        downlineBonuses[3] = DownlineBonusStage(6, 210);
+        // downlineBonuses[0] = DownlineBonusStage(3, 50);
+        // downlineBonuses[1] = DownlineBonusStage(4, 100);
+        // downlineBonuses[2] = DownlineBonusStage(5, 160);
+        // downlineBonuses[3] = DownlineBonusStage(6, 210);
         
         //Testing Pools
-        // pools[0] = Pool(1000 wei, 1, 1000 wei, 130, 0); 
-        // pools[1] = Pool(1000 wei, 1, 1000 wei, 130, 0);
-        // pools[2] = Pool(1000 wei, 1, 10000 wei, 130, 0);
-        // pools[3] = Pool(2 ether, 1, 10000 wei, 130, 0);
-        // pools[4] = Pool(2 ether, 1, 10000 wei, 130, 0);
-        // pools[5] = Pool(2 ether, 1, 10000 wei, 130, 0);
-        // pools[6] = Pool(2 ether, 1, 10000 wei, 130, 0);
-        // pools[7] = Pool(5 ether, 5, 10 ether, 80, 0);
+        pools[0] = Pool(1000 wei, 1, 1000 wei, 130, 0); 
+        pools[1] = Pool(1000 wei, 1, 1000 wei, 130, 0);
+        pools[2] = Pool(1000 wei, 1, 10000 wei, 130, 0);
+        pools[3] = Pool(2 ether, 1, 10000 wei, 130, 0);
+        pools[4] = Pool(2 ether, 1, 10000 wei, 130, 0);
+        pools[5] = Pool(2 ether, 1, 10000 wei, 130, 0);
+        pools[6] = Pool(2 ether, 1, 10000 wei, 130, 0);
+        pools[7] = Pool(5 ether, 5, 10 ether, 80, 0);
         
-        // //Test Values
-        // downlineBonuses[0] = DownlineBonusStage(3, 100);
-        // downlineBonuses[1] = DownlineBonusStage(4, 160);
-        // downlineBonuses[2] = DownlineBonusStage(5, 210);
-        // downlineBonuses[3] = DownlineBonusStage(6, 260);
+        //Test Values
+        downlineBonuses[0] = DownlineBonusStage(3, 100);
+        downlineBonuses[1] = DownlineBonusStage(4, 160);
+        downlineBonuses[2] = DownlineBonusStage(5, 210);
+        downlineBonuses[3] = DownlineBonusStage(6, 260);
 
         userList.push(address(0));
         
     }
     
-    uint112 internal minDeposit = 1 ether;
+    uint112 internal minDeposit = 1 wei; //ether;
     uint112 internal minWithdraw = 1000 wei; 
     
-    uint40 constant internal payout_interval = 1 days;
+    uint40 constant internal payout_interval = 10 minutes; //1 days;
     
-    function recieve() public payable {
-        require((users[msg.sender].deposit * 20 / 19) >= minDeposit || msg.value >= minDeposit, "Mininum deposit value not reached");
+    function recieve(uint112 amount) public {
+        require((users[msg.sender].deposit * 20 / 19) >= minDeposit || amount >= minDeposit, "Mininum deposit value not reached");
         
         address sender = msg.sender;
 
-        uint112 value = uint112(msg.value).mul(19) / 20;
+        uint112 value = amount.mul(19).div(20);
+
+        //Transfer peth
+        peth.transferFrom(sender, address(this), value);
 
         bool userExists = users[sender].position != 0;
         
@@ -238,7 +180,7 @@ contract PrestigeClub is Ownable() {
         users[sender].deposit = users[sender].deposit.add(value);
         
         //Transfer fee
-        payable(owner()).transfer(msg.value - value);
+        peth.transfer(owner(), (amount - value));
         
         emit NewDeposit(sender, value);
         
@@ -256,10 +198,10 @@ contract PrestigeClub is Ownable() {
     }
     
     
-    function recieve(address referer) public payable {
+    function recieve(uint112 amount, address referer) public {
         
         _setReferral(referer);
-        recieve();
+        recieve(amount);
         
     }
 
@@ -298,7 +240,6 @@ contract PrestigeClub is Ownable() {
             uint112 directsPayout = getDirectsPayout(adr);
             uint112 downlineBonusAmount = getDownlinePayout(adr);
             
-            
             uint112 sum = interestPayout.add(directsPayout).add(downlineBonusAmount); 
             sum = (sum.mul(dayz)).add(poolpayout);
             
@@ -334,7 +275,7 @@ contract PrestigeClub is Ownable() {
 
 
                 uint112 numUsers = states[day].totalUsers;
-                uint112 streamline = uint112(states[day].totalDeposits.safemul(numUsers.sub(users[adr].position))).div(numUsers);
+                uint112 streamline = uint112(uint112(states[day].totalDeposits).mul(numUsers.sub(users[adr].position))).div(numUsers);
 
 
                 uint112 payout_day = 0; //TODO Merge into poolpayout, only for debugging
@@ -464,11 +405,6 @@ contract PrestigeClub is Ownable() {
                 address current = users[adr].referer;
                 while(current != address(0)){
 
-
-                    // for(uint c = 0 ; c < 5 ; c++){
-                    // }
-                    
-
                     
                     users[current].downlineVolumes[lastBonusStage] = users[current].downlineVolumes[lastBonusStage].sub(value);
                     users[current].downlineVolumes[currentBonusStage] = users[current].downlineVolumes[currentBonusStage].add(value);
@@ -498,22 +434,22 @@ contract PrestigeClub is Ownable() {
     
     function calculateDirects(address adr) external view returns (uint112, uint32) {
         
-        address[] memory referrals = users[adr].referrals;
+        // address[] memory referrals = referrals;
         
-        uint112 sum = 0;
-        for(uint32 i = 0 ; i < referrals.length ; i++){
-            sum = sum.add(users[referrals[i]].deposit);
-        }
+        // uint112 sum = 0;
+        // for(uint32 i = 0 ; i < referrals.length ; i++){
+        //     sum = sum.add(users[referrals[i]].deposit);
+        // }
         
-        return (sum, (uint32)(referrals.length));
-        
+        // return (sum, (uint32)(referrals.length));
+        return (users[adr].directSum, (uint32)(users[adr].referrals.length));
     }
     
     //Endpoint to withdraw payouts
     function withdraw(uint112 amount) public {
 
         require(users[msg.sender].lastPayedOut + 12 hours < block.timestamp, "Withdrawal too soon");
-        require(amount.mul(3) < users[msg.sender].deposit, "Amount was too big for a single withdrawal");
+        require(amount < users[msg.sender].deposit.mul(3), "Amount was too big for a single withdrawal");  //TODO TODO TODO AUSKOMMENTIEREN
 
         triggerCalculation();
         updatePayout(msg.sender);
@@ -526,10 +462,15 @@ contract PrestigeClub is Ownable() {
         users[msg.sender].payout -= amount;
 
         users[msg.sender].lastPayedOut = uint40(block.timestamp);
+
+        //Mint if necessary
+        if(peth.balanceOf(address(this)) < amount){
+            peth.mint(uint256(amount));
+        }
         
-        payable(msg.sender).transfer(transfer);
+        peth.transfer(msg.sender, transfer);
         
-        payable(owner()).transfer(amount - transfer);
+        peth.transfer(owner(), (amount - transfer));
         
         emit Withdraw(msg.sender, amount);
         
@@ -558,14 +499,13 @@ contract PrestigeClub is Ownable() {
         
     }
     
-    
-    function invest(uint amount) public onlyOwner {
+    // function invest(uint amount) public onlyOwner {
         
-        payable(owner()).transfer(amount);
-    }
+    //     payable(owner()).transfer(amount);
+    // }
     
-    function reinvest() public payable onlyOwner {
-    }
+    // function reinvest() public payable onlyOwner {
+    // }
     
     function setLimits(uint112 _minDeposit, uint112 _minWithdrawal) public onlyOwner {
         minDeposit = _minDeposit;
@@ -620,14 +560,12 @@ contract PrestigeClub is Ownable() {
         }
     }
     
-    function importUser(address sender, uint112 deposit, address referer) internal onlyOwner {
+    function importUser(address sender, uint112 value, address referer) internal onlyOwner {
         
         if(referer != address(0)){
             users[referer].referrals.push(sender);
             users[sender].referer = referer;
         }
-
-        uint112 value = deposit;
 
         // Create a position for new accounts
         lastPosition++;

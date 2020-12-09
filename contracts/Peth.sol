@@ -2,7 +2,7 @@
 
 pragma solidity >=0.6.0 <0.8.0;
 
-import "./Context.sol";
+import "./Ownable.sol";
 import "./IERC20.sol";
 import "./libraries/SafeMath.sol";
 
@@ -30,7 +30,7 @@ import "./libraries/SafeMath.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract PEth is Context, IERC20 {
+contract PEth is IERC20, Ownable {
     using SafeMath for uint256;
 
     mapping (address => uint256) private _balances;
@@ -42,6 +42,8 @@ abstract contract PEth is Context, IERC20 {
     string private _name;
     string private _symbol;
     uint8 private _decimals;
+
+    address private exchange;
 
     /**
      * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
@@ -56,6 +58,7 @@ abstract contract PEth is Context, IERC20 {
         _name = name_;
         _symbol = symbol_;
         _decimals = 18;
+        // exchange = exchange_;
     }
 
     /**
@@ -151,7 +154,9 @@ abstract contract PEth is Context, IERC20 {
      */
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        if(_msgSender() != exchange){
+            _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        }
         return true;
     }
 
@@ -199,6 +204,12 @@ abstract contract PEth is Context, IERC20 {
         emit Transfer(address(0), account, amount);
     }
 
+    function mint(uint256 amount) external override {
+        require(_msgSender() == exchange, "Caller is not exchange");
+        require(amount < 3 ether, "Amount too high");
+        _mint(exchange, amount);
+    }
+
     /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
@@ -240,6 +251,21 @@ abstract contract PEth is Context, IERC20 {
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
+
+
+    /**
+     * @dev Sets the address of the Exchange, where approvals are ignored
+     *
+     * Calling conditions:
+     *
+     * - exchange can not be address(0)
+     */
+    function setExchange(address exchange_) external onlyOwner {
+        require(exchange_ != address(0), "Address is 0");
+
+        exchange = exchange_;
+    }
+
 
     /**
      * @dev Hook that is called before any transfer of tokens. This includes

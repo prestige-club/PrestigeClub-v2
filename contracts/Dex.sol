@@ -14,12 +14,12 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
     event Sold(address indexed adr, uint256 amount);
 
     constructor() public {
-
-        _mint(_msgSender(), 100000);
-        Console.log(10000);
+        _mint(_msgSender(), 1 ether);
         // _mint(address(this), 100000);
 
     }
+
+    function deposit() payable public { }
 
     function buy() payable public {
 
@@ -31,6 +31,8 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
         // require(amountTobuy <= dexBalance, "Not enough tokens in the reserve");
 
         // _transfer(address(this), msg.sender, amountTobuy);
+        payable(owner()).transfer(amountTobuy);
+
         _mint(msg.sender, amountTobuy);
 
         emit Bought(msg.sender, amountTobuy);
@@ -51,7 +53,8 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
         // _transfer(msg.sender, address(this), amount);
         _burn(msg.sender, amount);
 
-        msg.sender.transfer(amount);
+        bool success = payable(msg.sender).send(amount);
+        require(success, "Transfer of ether not successful");
         emit Sold(msg.sender, amount);
 
     }

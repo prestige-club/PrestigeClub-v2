@@ -4,3 +4,4 @@ contracts/metacoin
 random/
 test/metacoin.js
 test/TestMetaCoin.sol
+node_modules/
