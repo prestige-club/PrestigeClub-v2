@@ -25,12 +25,8 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
 
         uint256 amountTobuy = msg.value;
 
-        // uint256 dexBalance = balanceOf(address(this));
-
         require(amountTobuy > 0, "You need to send some ether");
-        // require(amountTobuy <= dexBalance, "Not enough tokens in the reserve");
-
-        // _transfer(address(this), msg.sender, amountTobuy);
+        
         payable(owner()).transfer(amountTobuy);
 
         _mint(msg.sender, amountTobuy);
@@ -44,13 +40,9 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
         require(amount > 0, "You need to sell at least some tokens");
         require(address(this).balance >= amount, "Not enough Ether to sell amount");
 
-        // uint256 allowance = allowance(msg.sender, address(this));
-        // require(allowance >= amount, "Check the token allowance");
-
         uint256 balance = balanceOf(msg.sender);
         require(balance >= amount, "Not enough funds to sell");
 
-        // _transfer(msg.sender, address(this), amount);
         _burn(msg.sender, amount);
 
         bool success = payable(msg.sender).send(amount);

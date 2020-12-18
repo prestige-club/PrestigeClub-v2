@@ -6,51 +6,30 @@ import "./Ownable.sol";
 
 // SPDX-License-Identifier: MIT
 
-// library SafeMath128{
-
-//     //Custom addition
-//     function safemul(uint128 a, uint128 b) internal pure returns (uint128) {
-//         // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-//         // benefit is lost if 'b' is also tested.
-//         // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-//         if (a == 0) {
-//             return 0;
-//         }
-
-//         uint128 c = a * b;
-//         if(!(c / a == b)){
-//             c = (2**128)-1;
-//         }
-//         // require(c / a == b, "SafeMath: multiplication overflow");
-
-//         return c;
-//     }
-// }
 
 //Restrictions:
 //only 2^32 Users
-//Maximum of 2^104 / 10^18 Ether investment. Theoretically 20 Trl Ether, practically 100000000000 Ether compiles
 //Maximum of (2^104 / 10^18 Ether) investment. Theoretically 20 Trl Ether, practically 100000000000 Ether compiles
 contract PrestigeClub is Ownable() {
 
     using SafeMath112 for uint112;
-    // using SafeMath128 for uint128;
 
+    //User Object which stores all data associated with a specific address
     struct User {
-        uint112 deposit; //265 bits together
-        uint112 payout;
-        uint32 position;
-        uint8 qualifiedPools;
+        uint112 deposit; //amount a User has paid in. Note: Deposits can not removed, since withdrawals are only possible on payout
+        uint112 payout; //Generated revenue
+        uint32 position; //The position (a incrementing int value). Used for calculation of the streamline
+        uint8 qualifiedPools;  //Number of Pools and DownlineBonuses, which the User has qualified for respectively
         uint8 downlineBonus;
         address referer;
         address[] referrals;
 
-        uint112 directSum;
-        uint40 lastPayout;
+        uint112 directSum;   //Sum of deposits of all direct referrals
+        uint40 lastPayout;  //Timestamp of the last calculated Payout
 
         uint40 lastPayedOut; //Point in time, when the last Payout was made
 
-        uint112[5] downlineVolumes;
+        uint112[5] downlineVolumes;  //Used for downline bonus calculation, correspondings to logical mapping  downlineBonusStage (+ 0) => sum of deposits of users directly or indirectly referred in given downlineBonusStage
     }
     
     event NewDeposit(address indexed addr, uint112 amount);
@@ -63,6 +42,7 @@ contract PrestigeClub is Ownable() {
     event Withdraw(address indexed addr, uint112 amount);
     
     mapping (address => User) public users;
+    //userList is basically a mapping position(int) => address
     address[] public userList;
 
     uint32 public lastPosition; //= 0
@@ -79,6 +59,8 @@ contract PrestigeClub is Ownable() {
         uint32 numUsers;
     }
 
+    //Poolstates are importing for calculating the pool payout for every seperate day.
+    //Since the number of Deposits and Users in every pool change every day, but payouts are only calculated if they need to be calculated, their history has to be stored
     PoolState[] public states;
 
     struct PoolState {
@@ -86,7 +68,8 @@ contract PrestigeClub is Ownable() {
         uint32 totalUsers;
         uint32[8] numUsers;
     }
-    
+
+    //Downline bonus is a bonus, which users get when they reach a certain pool. The Bonus is calculated based on the sum of the deposits of all Users delow them in the structure
     DownlineBonusStage[4] downlineBonuses;
     
     struct DownlineBonusStage {
@@ -105,6 +88,10 @@ contract PrestigeClub is Ownable() {
 
         peth = IERC20(erc20Adr);
 
+        //Definition of the Pools and DownlineBonuses with their respective conditions and percentages. 
+        //Note, values are not final, adapted for testing purposes
+
+        //Prod values
         // pools[0] = Pool(3 ether, 1, 3 ether, 130, 0);
         // pools[1] = Pool(15 ether, 3, 5 ether, 130, 0);
         // pools[2] = Pool(15 ether, 4, 44 ether, 130, 0);
@@ -139,11 +126,12 @@ contract PrestigeClub is Ownable() {
         
     }
     
-    uint112 internal minDeposit = 1 wei; //ether;
+    uint112 internal minDeposit = 1 wei; //Prod: 1 ether;
     uint112 internal minWithdraw = 1000 wei; 
     
-    uint40 constant internal payout_interval = 10 minutes; //1 days;
+    uint40 constant internal payout_interval = 10 minutes; //Prod: 1 days;
     
+    //Investment function for new deposits
     function recieve(uint112 amount) public {
         require((users[msg.sender].deposit * 20 / 19) >= minDeposit || amount >= minDeposit, "Mininum deposit value not reached");
         
@@ -156,6 +144,7 @@ contract PrestigeClub is Ownable() {
 
         bool userExists = users[sender].position != 0;
         
+        //Trigger calculation of next Pool State, if 1 day has passed
         triggerCalculation();
 
         // Create a position for new accounts
@@ -198,6 +187,7 @@ contract PrestigeClub is Ownable() {
     }
     
     
+    //New deposits with referral address
     function recieve(uint112 amount, address referer) public {
         
         _setReferral(referer);
@@ -207,6 +197,8 @@ contract PrestigeClub is Ownable() {
 
     uint8 public downlineLimit = 31;
 
+    //Updating the payouts and stats for the direct and every User which indirectly referred User reciever
+    //adr = Address of the first referer , addition = new deposit value
     function updateUpline(address reciever, address adr, uint112 addition) private {
         
         address current = adr;
@@ -230,6 +222,7 @@ contract PrestigeClub is Ownable() {
         
     }
     
+    //Updates the payout amount for given user
     function updatePayout(address adr) private {
         
         uint40 dayz = (uint40(block.timestamp) - users[adr].lastPayout) / (payout_interval);
@@ -264,6 +257,7 @@ contract PrestigeClub is Ownable() {
         return deposit.mul(quote) / 10000;
     }
     
+    //Pool Payout does not get calculated per day but for the amount of days passed as arguments
     function getPoolPayout(address adr, uint40 dayz) public view returns (uint112){
 
         uint40 length = (uint40)(states.length);
@@ -287,9 +281,7 @@ contract PrestigeClub is Ownable() {
 
                     if(stateNumUsers != 0){
                         payout_day += pool_base.div(stateNumUsers);
-                    }/*else{
-                        require(false, "Divison by 0"); //TODO DEBUG REMOVE
-                    }*/
+                    }
                 }
 
                 poolpayout = poolpayout.add(payout_day);
@@ -350,6 +342,7 @@ contract PrestigeClub is Ownable() {
         
     }
 
+    //Gets called every 24 hours to push new PoolState
     function pushPoolState() private {
         uint32[8] memory temp;
         for(uint8 i = 0 ; i < 8 ; i++){
@@ -358,7 +351,8 @@ contract PrestigeClub is Ownable() {
         states.push(PoolState(depositSum, lastPosition, temp));
         pool_last_draw += payout_interval;
     }
-    
+
+    //updateUserPool and updateDownlineBonusStage check if the requirements for the next pool or stage are reached, and if so, increment the counter in his User struct 
     function updateUserPool(address adr) private {
         
         if(users[adr].qualifiedPools < pools.length){
@@ -499,14 +493,6 @@ contract PrestigeClub is Ownable() {
         
     }
     
-    // function invest(uint amount) public onlyOwner {
-        
-    //     payable(owner()).transfer(amount);
-    // }
-    
-    // function reinvest() public payable onlyOwner {
-    // }
-    
     function setLimits(uint112 _minDeposit, uint112 _minWithdrawal) public onlyOwner {
         minDeposit = _minDeposit;
         minWithdraw = _minWithdrawal;
@@ -543,6 +529,8 @@ contract PrestigeClub is Ownable() {
         }
         return sum;
     }
+
+    //Data Import Logic
     
     function reCalculateImported(uint64 from, uint64 to) public onlyOwner {
         uint40 time = pool_last_draw - payout_interval;
