@@ -229,9 +229,23 @@ contract PrestigeClub is Ownable() {
         uint40 dayz = (uint40(block.timestamp) - users[adr].lastPayout) / (payout_interval);  //TODO Maybe SafeMath? Because of Attack where block.timestamp could be manipulated? How probably is it?
         if(dayz >= 1){
             
-            uint112 interestPayout = getInterestPayout(adr);
+            //Interest Payout
+            uint112 deposit = users[adr].deposit;
+            //Calculate Base Payouts
+            uint8 quote;
+            if(deposit >= 30 ether){
+                quote = 15;
+            }else{
+                quote = 10;
+            }
+            
+            uint112 interestPayout = deposit.mul(quote) / 10000;
+            // uint112 interestPayout = getInterestPayout(adr);
+
             uint112 poolpayout = getPoolPayout(adr, dayz);
+
             uint112 directsPayout = users[adr].directSum.mul(5) / 10000;//getDirectsPayout(adr);
+
             uint112 downlineBonusAmount = getDownlinePayout(adr);
             
             uint112 sum = interestPayout.add(directsPayout).add(downlineBonusAmount); 
@@ -245,20 +259,20 @@ contract PrestigeClub is Ownable() {
         }
     }
     
-    function getInterestPayout(address adr) public view returns (uint112){
-        // return PrestigeClubCalculations.getInterestPayout(users[adr].deposit);
+    // function getInterestPayout(address adr) public view returns (uint112){
+    //     // return PrestigeClubCalculations.getInterestPayout(users[adr].deposit);
 
-        uint112 deposit = users[adr].deposit;
-        //Calculate Base Payouts
-        uint8 quote;
-        if(deposit >= 30 ether){
-            quote = 15;
-        }else{
-            quote = 10;
-        }
+    //     uint112 deposit = users[adr].deposit;
+    //     //Calculate Base Payouts
+    //     uint8 quote;
+    //     if(deposit >= 30 ether){
+    //         quote = 15;
+    //     }else{
+    //         quote = 10;
+    //     }
         
-        return deposit.mul(quote) / 10000;
-    }
+    //     return deposit.mul(quote) / 10000;
+    // }
     
     //Pool Payout does not get calculated per day but for the amount of days passed as arguments
     function getPoolPayout(address adr, uint40 dayz) public view returns (uint112){
