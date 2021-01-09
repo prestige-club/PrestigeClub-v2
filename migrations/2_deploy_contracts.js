@@ -1,5 +1,3 @@
-const ConvertLib = artifacts.require("ConvertLib");
-const MetaCoin = artifacts.require("MetaCoin");
 const SafeMath = artifacts.require("SafeMath");
 const Context = artifacts.require("Context");
 const PEthDex = artifacts.require("PEthDex");
