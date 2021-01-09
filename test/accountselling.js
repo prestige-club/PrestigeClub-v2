@@ -26,11 +26,12 @@ function bn(some){
 
 contract("PrestigeClub", (accounts) => {
 
-    it("Downlinebonustest 2", async function(){
+    it("Selling Account Test", async function(){
 
         const [dexC, contract] = await initContract(accounts);
 
         const sell = await seller.new(contract.address);
+        await contract.setSellingContract(sell.address);
 
         let min_deposit = bn("20000");
         let one_ether = bn(web3.utils.toWei("1", "ether")); //1000
@@ -55,10 +56,10 @@ contract("PrestigeClub", (accounts) => {
 
         expect(balance22.toString()).equals(balance2.add(one_ether).toString());
 
-        // console.log((await contract.users(accounts[4])).deposit.toString())
-        // console.log((await contract.users(accounts[2])).deposit.toString())
-        // console.log(await contract.users(accounts[4]))
-        // console.log(await contract.users(accounts[2]))
+        console.log((await contract.users(accounts[4])).deposit.toString())
+        console.log((await contract.users(accounts[2])).deposit.toString())
+        console.log(await contract.users(accounts[4]))
+        console.log(await contract.users(accounts[2]))
 
         await contract.withdraw(bn(100000), {from: accounts[4]})
 
