@@ -92,7 +92,7 @@ it2("PrestigeClub", (accounts) => {
 
 contract("PrestigeClub", (accounts) => {
 
-  it2("Load Test", async function(){
+  it("Load Test", async function(){
 
     const [dexC, contract] = await initContract(accounts);
 
@@ -102,7 +102,7 @@ contract("PrestigeClub", (accounts) => {
     console.log(accounts[0])
     await contract.methods["recieve(uint112,address)"](bn(10000), accounts[0], {from: accounts[1]});
 
-    for(let i = 2 ; i < accounts.length ; i++){
+    for(let i = 2 ; i < accounts.length / 3 ; i++){
 
       console.log("-- " + i + " --")
       console.log(accounts[i])
@@ -111,9 +111,10 @@ contract("PrestigeClub", (accounts) => {
 
       // console.log("Payout: " + (await contract.getDownlinePayout(accounts[1].address)).toString())
     }
-    for(let i = 0 ; i < accounts.length  ; i++){
+    for(let i = 0 ; i < accounts.length / 3 ; i++){
       console.log("----");
       console.log("Stage: " + (await contract.users(accounts[i])).downlineBonus.toString())
+      console.log("Stage: " + (await contract.getDownline({from: accounts[i]})).toString())
       console.log("Payout: " + (await contract.getDownlinePayout(accounts[i])).toString())
       // console.log("Volume: " + (await accounts[i].getDownline())[0].toString())
     }
@@ -260,7 +261,7 @@ contract("PrestigeClub", (accounts) => {
 });
 
 contract("PrestigeClub", (accounts) => {
-  it("Simple basic test", async function() {
+  it2("Simple basic test", async function() {
 
     const [dexC, contract] = await initContract(accounts);
 
@@ -309,8 +310,19 @@ contract("PrestigeClub", (accounts) => {
     let interest = base_deposit / 10000 * 10;
     let downline = (base_deposit * 1) / 1000000 * 100;
     let expected = interest + (2 * base_deposit / 10000 * 5) + poolpayout + downline
+
+    // console.log(await contract.states(2)["totalDeposits"])
+    // console.log(await contract.states(1).totalDeposits)
+    // console.log(((await contract.users(accounts[1])).qualifiedPools).toString())
+    // console.log("Address " + accounts[1]);
     
     console.log("interest: " + interest + " directs " + 2 * (base_deposit / 10000 * 5) + " pool " + 2*poolpayout + " down " + downline)
+
+    // let interest2 = (await contract.getInterestPayout(accounts[1])).toString()
+    // let downline2 = (await contract.getDownlinePayout(accounts[1])).toString()
+    // let poolPayout2 = (await contract.getPoolPayout(accounts[1], 1)).toString()
+    // let directs2 = bn((await contract.users(accounts[1])).directSum).mul(bn(5)).div(bn(10000)).toString();
+    // console.log("interest: " + interest + " directs " + directs2 + " pool " + poolPayout2 + " down " + downline2)
 
     expect((await contract.users(accounts[1])).payout).satisfies(x => fluctuation(bn((2 * expected + interest)), bn(x), 0.99));
 

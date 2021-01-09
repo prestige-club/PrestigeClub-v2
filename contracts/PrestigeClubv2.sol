@@ -1,9 +1,9 @@
 pragma solidity 0.6.8;
 
+import "./libraries/PrestigeClubCalculations.sol";
 import "./libraries/SafeMath112.sol";
 import "./IERC20.sol";
 import "./Ownable.sol";
-// import "./libraries/PrestigeClubCalculations.sol";
 
 // SPDX-License-Identifier: MIT
 
@@ -80,13 +80,11 @@ contract PrestigeClub is Ownable() {
     uint40 public pool_last_draw;
 
     IERC20 peth;
-
-    PrestigeClub oldContract;
     
     constructor(address erc20Adr) public {
  
         uint40 timestamp = uint40(block.timestamp);
-        pool_last_draw = timestamp - (timestamp % payout_interval) - (2 * payout_interval);
+        pool_last_draw = timestamp - (timestamp % payout_interval) - (1 * payout_interval);
 
         peth = IERC20(erc20Adr);
 
@@ -141,7 +139,7 @@ contract PrestigeClub is Ownable() {
         uint112 value = amount.mul(19).div(20);
 
         //Transfer peth
-        peth.transferFrom(sender, address(this), value);
+        peth.transferFrom(sender, address(this), amount);
 
         bool userExists = users[sender].position != 0;
         
@@ -274,88 +272,97 @@ contract PrestigeClub is Ownable() {
     //     return deposit.mul(quote) / 10000;
     // }
     
-    //Pool Payout does not get calculated per day but for the amount of days passed as arguments
     function getPoolPayout(address adr, uint40 dayz) public view returns (uint112){
-
-        uint40 length = (uint40)(states.length);
-
-        uint112 poolpayout = 0;
-
-        if(users[adr].qualifiedPools > 0){
-            for(uint40 day = length - dayz ; day < length ; day++){
-
-
-                uint112 numUsers = states[day].totalUsers;
-                uint112 streamline = uint112(uint112(states[day].totalDeposits).mul(numUsers.sub(users[adr].position))).div(numUsers);
-
-                uint112 payout_day = 0; //TODO Merge into poolpayout, only for debugging
-                uint32 stateNumUsers = 0;
-                for(uint8 j = 0 ; j < users[adr].qualifiedPools ; j++){
-                    uint112 pool_base = streamline.mul(pools[j].payoutQuote) / 1000000;
-
-                    stateNumUsers = states[day].numUsers[j];
-
-                    if(stateNumUsers != 0){
-                        payout_day += pool_base.div(stateNumUsers);
-                    }
-                }
-
-                poolpayout = poolpayout.add(payout_day);
-
-            }
-        }
-        
-        return poolpayout;
+        return PrestigeClubCalculations.getPoolPayout(users[adr], dayz, pools, states);
     }
+
+    //Pool Payout does not get calculated per day but for the amount of days passed as arguments
+    // function getPoolPayout(address adr, uint40 dayz) public view returns (uint112){
+
+    //     uint40 length = (uint40)(states.length);
+
+    //     uint112 poolpayout = 0;
+
+    //     if(users[adr].qualifiedPools > 0){
+    //         for(uint40 day = length - dayz ; day < length ; day++){
+
+
+    //             uint112 numUsers = states[day].totalUsers;
+    //             uint112 streamline = uint112(uint112(states[day].totalDeposits).mul(numUsers.sub(users[adr].position))).div(numUsers);
+
+    //             uint112 payout_day = 0; //TODO Merge into poolpayout, only for debugging
+    //             uint32 stateNumUsers = 0;
+    //             for(uint8 j = 0 ; j < users[adr].qualifiedPools ; j++){
+    //                 uint112 pool_base = streamline.mul(pools[j].payoutQuote) / 1000000;
+
+    //                 stateNumUsers = states[day].numUsers[j];
+
+    //                 if(stateNumUsers != 0){
+    //                     payout_day += pool_base.div(stateNumUsers);
+    //                 }
+    //             }
+
+    //             poolpayout = poolpayout.add(payout_day);
+
+    //         }
+    //     }
+        
+    //     return poolpayout;
+    // }
 
     function getDownlinePayout(address adr) public view returns (uint112){
-
-        //Calculate Downline Bonus
-        uint112 downlinePayout = 0;
-        
-        uint8 downlineBonus = users[adr].downlineBonus;
-        
-        if(downlineBonus > 0){
-            
-            uint64 ownPercentage = downlineBonuses[downlineBonus - 1].payoutQuote;
-
-            for(uint8 i = 0 ; i < downlineBonus; i++){
-
-                uint64 quote = 0;
-                if(i > 0){
-                    quote = downlineBonuses[i - 1].payoutQuote;
-                }else{
-                    quote = 0;
-                }
-
-                uint64 percentage = ownPercentage - quote;
-                if(percentage > 0){ //Requiring positivity and saving gas for 0, since that returns 0
-
-                    downlinePayout = downlinePayout.add(users[adr].downlineVolumes[i].mul(percentage) / 1000000); //TODO If the error occures here, this will prevent fixes (?)
-
-                }
-
-            }
-
-            if(downlineBonus == 4){
-                downlinePayout = downlinePayout.add(users[adr].downlineVolumes[downlineBonus].mul(50) / 1000000);
-            }
-
-        }
-
-        return downlinePayout;
-        
+        return PrestigeClubCalculations.getDownlinePayout(users[adr], downlineBonuses);
     }
+    // function getDownlinePayout(address adr) public view returns (uint112){
+
+    //     //Calculate Downline Bonus
+    //     uint112 downlinePayout = 0;
+        
+    //     uint8 downlineBonus = users[adr].downlineBonus;
+        
+    //     if(downlineBonus > 0){
+            
+    //         uint64 ownPercentage = downlineBonuses[downlineBonus - 1].payoutQuote;
+
+    //         for(uint8 i = 0 ; i < downlineBonus; i++){
+
+    //             uint64 quote = 0;
+    //             if(i > 0){
+    //                 quote = downlineBonuses[i - 1].payoutQuote;
+    //             }
+
+    //             uint64 percentage = ownPercentage - quote;
+    //             if(percentage > 0){ //Requiring positivity and saving gas for 0, since that returns 0
+
+    //                 downlinePayout = downlinePayout.add(users[adr].downlineVolumes[i].mul(percentage) / 1000000); //TODO If the error occures here, this will prevent fixes (?)
+
+    //             }
+
+    //         }
+
+    //         if(downlineBonus == 4){
+    //             downlinePayout = downlinePayout.add(users[adr].downlineVolumes[4].mul(50) / 1000000);
+    //         }
+
+    //     }
+    //     return downlinePayout;
+    // }
 
     //TODO If possible, reactivate
-    //function getDirectsPayout(address adr) public view returns (uint112) {
+    // function getDirectsPayout(address adr) public view returns (uint112) {
         
         //Calculate Directs Payouts
         // return PrestigeClubCalculations.getDirectsPayout(users[adr].directSum);
 
     //    return users[adr].directSum.mul(5) / 10000;
         
-    //}
+    // }
+    
+    function triggerCalculation() public {  //TODO Remove and add if to pushPoolState 
+        if(block.timestamp > pool_last_draw + payout_interval){
+            pushPoolState();
+        }
+    }
 
     //Gets called every 24 hours to push new PoolState
     function pushPoolState() private {
@@ -457,8 +464,8 @@ contract PrestigeClub is Ownable() {
     //Endpoint to withdraw payouts
     function withdraw(uint112 amount) public {
 
-        require(users[msg.sender].lastPayedOut + 12 hours < block.timestamp, "Withdrawal too soon");
-        require(amount < users[msg.sender].deposit.mul(3), "Too much value for single withdrawal");  //TODO TODO TODO AUSKOMMENTIEREN
+        require(users[msg.sender].lastPayedOut + 12 hours < block.timestamp, "10");
+        require(amount < users[msg.sender].deposit.mul(3), "11");  //TODO TODO TODO AUSKOMMENTIEREN
 
         triggerCalculation();
         updatePayout(msg.sender);
@@ -496,7 +503,7 @@ contract PrestigeClub is Ownable() {
         }
         
         require(users[msg.sender].referer == address(0), "Referer already set");
-        require(users[referer].position > 0, "Referer no exist");
+        require(users[referer].position > 0, "Referer doesnt exist");
         require(msg.sender != referer, "Referer is self");
         
         users[referer].referrals.push(msg.sender);
@@ -512,34 +519,8 @@ contract PrestigeClub is Ownable() {
         minDeposit = _minDeposit;
     }
 
-    // function setDownlineLimit(uint8 limit) public onlyOwner {
-    //     downlineLimit = limit;
-    // }
-
-    //Only for BO
-    function getDownline() external view returns (uint112, uint128){
-        uint112 sum;
-        for(uint8 i = 0 ; i < users[msg.sender].downlineVolumes.length ; i++){
-            sum += users[msg.sender].downlineVolumes[i];
-        }
-
-        return (sum, getDownlineUsers(msg.sender));
-    }
-
-    function getDownlineUsers(address adr) private view returns (uint128){
-
-        uint128 sum = 0;
-        uint32 length = uint32(users[adr].referrals.length);
-        sum += length;
-        for(uint32 i = 0; i < length ; i++){
-            sum += getDownlineUsers(users[adr].referrals[i]);
-        }
-        return sum;
-    }
-
     //Data Import Logic
-    
-   /* function reCalculateImported(uint64 from, uint64 to) public onlyOwner {
+    function reCalculateImported(uint64 from, uint64 to, uint32 _lastPosition, uint112 _depositSum) public onlyOwner {
         uint40 time = pool_last_draw - payout_interval;
         for(uint64 i = from ; i < to + 1 ; i++){
             address adr = userList[i];
@@ -547,27 +528,63 @@ contract PrestigeClub is Ownable() {
             users[adr].lastPayout = time;
             updatePayout(adr);
         }
+        lastPosition = _lastPosition;
+        depositSum = _depositSum;
     }
     
-    function _import(address[] memory sender, uint112[] memory deposit, address[] memory referer) public onlyOwner {
+    function _import(address[] memory sender, uint112[] memory deposit, address[] memory referer, uint32[] memory positions) public onlyOwner {
         for(uint64 i = 0 ; i < sender.length ; i++){
-            importUser(sender[i], deposit[i], referer[i]);
+            importUser(sender[i], deposit[i], referer[i], positions[i]);
         }
     }
-*/
+    
+    function importUser(address sender, uint112 value, address referer, uint32 position) internal onlyOwner {
+
+        require(users[sender].deposit == 0, "Account exists already");
+
+        // Create a position for new accounts
+        // lastPosition++;
+        users[sender].position = position;
+        users[sender].lastPayout = pool_last_draw;
+        userList.push(sender);
+
+        if(referer != address(0)){
+
+            users[referer].referrals.push(sender);
+            users[sender].referer = referer;
+
+            updateUpline(sender, referer, value);
+        }
+
+        users[sender].deposit = value;
+        
+        emit NewDeposit(sender, value);
+        
+        updateUserPool(sender);
+        updateDownlineBonusStage(sender);
+        
+        if(referer != address(0)){
+            users[referer].directSum += value;
+    
+            updateUserPool(referer);
+            updateDownlineBonusStage(referer);
+        }
+        
+        // depositSum +_depositSum= value;
+        
+    }
+
     // function getPoolUsers(uint32 index, uint32 index2) external view returns (uint112){
     //     return states[index].numUsers[index2];
     // }
 
-    function setOldContract(address adr) external{
-        oldContract = PrestigeClub(adr);
-    }
+    // PrestigeClub oldContract;
 
-    function getVolumes(address user) external view returns (uint112[5] memory) {
-        return users[user].downlineVolumes;
-    }
+    // function setOldContracts(address adr) external{
+    //     oldContract = PrestigeClub(adr);
+    // }
 
-    function _import2(address[] memory senders) public onlyOwner {
+    /*function _import2(address[] memory senders) public onlyOwner {
         for(uint64 i = 0 ; i < senders.length ; i++){
 
             address sender = senders[i];
@@ -616,62 +633,35 @@ contract PrestigeClub is Ownable() {
         lastPosition = oldContract.lastPosition();
 
         pushPoolState();
-    }
-    
-    /*function importUser(address sender, uint112 value, address referer) internal onlyOwner {
-        
-        if(referer != address(0)){
-            users[referer].referrals.push(sender);
-            users[sender].referer = referer;
-        }
-
-        // Create a position for new accounts
-        lastPosition++;
-        users[sender].position = lastPosition;
-        users[sender].lastPayout = pool_last_draw;
-        userList.push(sender);
-
-        if(referer != address(0)){
-            updateUpline(sender, referer, value);
-        }
-
-        users[sender].deposit += value;
-        
-        emit NewDeposit(sender, value);
-        
-        updateUserPool(sender);
-        updateDownlineBonusStage(sender);
-        
-        if(referer != address(0)){
-            users[referer].directSum += value;
-    
-        updateUserPool(referer);
-            updateDownlineBonusStage(referer);
-        }
-        
-        depositSum += value;
-        
     }*/
 
-    function getUserReferrals(address adr) public view returns (address[] memory referrals){
-        return users[adr].referrals;
+    function getDetailedUserInfos(address adr) public view returns (address[] memory /*referrals */, uint112[5] memory /*volumes*/) {
+        return (users[adr].referrals, users[adr].downlineVolumes);
     }
+
+    function getDownline() public view returns (uint112, uint128){  //TODO Add address user
+        return PrestigeClubCalculations.getDownline(users);
+    }
+
+    // function getVolumes(address user) external view returns (uint112[5] memory) {
+    //     return users[user].downlineVolumes;
+    // }
+
+    // function getUserReferrals(address adr) public view returns (address[] memory referrals){
+    //     return users[adr].referrals;
+    // }
     
     //DEBUGGING
     //Used for extraction of User data in case of something bad happening and fund reversal needed.
     function getUserList() public view returns (address[] memory){  //TODO Probably not needed
         return userList;
     }
-    
-    function triggerCalculation() public {  //TODO Remove and add if to pushPoolState 
-        if(block.timestamp > pool_last_draw + payout_interval){
-            pushPoolState();
-        }
-    }
 
-    function sellAccount(address from, address to) public /*TODO enable onlyOwner*/ { //TODO OnlyOwner to onlySellingContract
+    function sellAccount(address from, address to) public { 
 
-        // require(users[from].deposit > 0, "User does not exist"); TODO Enable
+        require(msg.sender == owner() || msg.sender == _sellingContract, "Not authorized");
+
+        require(users[from].deposit > 0, "User does not exist");
 
         userList[users[from].position] = to;
 
@@ -686,9 +676,9 @@ contract PrestigeClub is Ownable() {
             }
         }
 
-        // for(uint16 i = 0 ; i < users[from].referrals.length ; i++){
-        //     users[users[from].referrals[i]].referer = to;
-        // }
+        for(uint16 i = 0 ; i < users[from].referrals.length ; i++){
+            users[users[from].referrals[i]].referer = to;
+        }
 
         users[to] = users[from];
         delete users[from];

@@ -49,7 +49,6 @@ contract("PrestigeClub", (accounts) => {
     let one_ether = bn(web3.utils.toWei("1", "ether"));
 
     let base_deposit = one_ether.div(bn(20)).mul(bn(19));
-
     //1. Test normal downline without difference effect
 
     await contract.methods["triggerCalculation()"]();
@@ -79,12 +78,13 @@ contract("PrestigeClub", (accounts) => {
     await increaseTime((10 * 60));
     await contract.triggerCalculation()
 
-    console.log((await contract.lastPosition()).toString())
+    console.log((await contract.lastPosition()).toString());
+    let depositSum = await contract.depositSum();
     // console.log(contract1Downline)
 
     let contract2 = await prestigeclub.new(dex.address);
 
-    await contract2.setOldContract(contract.address)
+    // await contract2.setOldContract(contract.address)
 
     let users = (await contract.getUserList()).slice(1)
 
@@ -92,16 +92,19 @@ contract("PrestigeClub", (accounts) => {
 
     let deposits = [one_ether, one_ether, one_ether, one_ether.mul(bn(3)), one_ether, one_ether]
     let referrals = ["0x0000000000000000000000000000000000000000", accounts[1], accounts[1], accounts[2], accounts[2], accounts[4]]
+    let positions = [0, 1, 2, 3, 4, 5]
     for(let i = 7 ; i <= 19 ; i++){
       deposits.push(one_ether)
       referrals.push(accounts[4])
+      positions.push(i - 1)
     }
 
-    await contract2._import2(users)
-    // await contract2._import(users, deposits, referrals)
-    // await contract2.triggerCalculation();
-    // await contract2.triggerCalculation();
-    // await contract2.reCalculateImported(1, 19);
+    // await contract2._import2(users)
+    await contract2._import(users, deposits, referrals, positions)
+    await contract2.reCalculateImported(1, 1, referrals.length, depositSum);
+    await contract2.triggerCalculation();
+    await contract2.triggerCalculation();
+    await contract2.reCalculateImported(1, 19, referrals.length, depositSum);
     
     console.log((await contract2.lastPosition()).toString())
 
@@ -119,7 +122,6 @@ contract("PrestigeClub", (accounts) => {
       let pool2 = await contract2.pools(i)
       console.log(i + ": " + pool.numUsers + " = " + pool2.numUsers)
     }
-
 
     // console.log(contract2Downline)
 

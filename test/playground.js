@@ -7,7 +7,7 @@ contract('PEthDex', (accounts) => {
     const pethinstance = await peths.deployed();
     const balance = await pethinstance.balanceOf(accounts[0]);
 
-    assert.equal(balance.valueOf(), 100000, "100000 wasn't in the first account");
+    assert.equal(balance.valueOf().toString(), "100000", "100000 wasn't in the first account");
   });
 
   it('Test Transfer', async () => {
@@ -21,13 +21,15 @@ contract('PEthDex', (accounts) => {
     const balance0 = await peth.balanceOf(accounts[0]);
     const balance1 = await peth.balanceOf(accounts[1]);
 
-    assert.equal(balance0.valueOf(), 99000, "99000 wasn't in the first account");
-    assert.equal(balance1.valueOf(), 1000, "1000 wasn't in the second account");
+    assert.equal(balance0.valueOf().toString(), "99000", "99000 wasn't in the first account");
+    assert.equal(balance1.valueOf().toString(), "1000", "1000 wasn't in the second account");
 
   });
 
   it('Test Buying / Selling', async () => {
     const peth = await peths.deployed();
+
+    await peth.deposit({from: accounts[3], value: 10000000})
 
     await peth.buy({from: accounts[2], value: 10000})
 
@@ -35,7 +37,7 @@ contract('PEthDex', (accounts) => {
     assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
 
     let supply = await peth.totalSupply();
-    assert.equal(supply.valueOf(), 110000);
+    assert.equal(supply.valueOf().toString(), "110000");
 
     // const getBalance = (account, at) =>
     //   promisify(cb => web3.eth.getBalance(account, at, cb));
