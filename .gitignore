@@ -5,3 +5,6 @@ random/
 test/metacoin.js
 test/TestMetaCoin.sol
 node_modules/
+node_modules2/
+
+frontend/

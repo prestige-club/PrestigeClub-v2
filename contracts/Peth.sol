@@ -3,6 +3,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 
 import "./Ownable.sol";
+import "./Context.sol";
 import "./IERC20.sol";
 import "./libraries/SafeMath.sol";
 
@@ -30,7 +31,7 @@ import "./libraries/SafeMath.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract PEth is IERC20, Ownable {
+contract PEth is IERC20, Ownable, Context {
     using SafeMath for uint256;
 
     mapping (address => uint256) private _balances;

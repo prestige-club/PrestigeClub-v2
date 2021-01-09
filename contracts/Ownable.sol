@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.0 <0.8.0;
-
-import "./Context.sol";
 /**
  * @dev Contract module which provides a basic access control mechanism, where
  * there is an account (an owner) that can be granted exclusive access to
@@ -15,8 +13,10 @@ import "./Context.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-abstract contract Ownable is Context {
+abstract contract Ownable {
     address private _owner;
+
+    address _sellingContract; //TODO Make private?
 
     // event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -24,7 +24,7 @@ abstract contract Ownable is Context {
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     constructor () internal {
-        address msgSender = _msgSender();
+        address msgSender = msg.sender;
         _owner = msgSender;
         // emit OwnershipTransferred(address(0), msgSender);
     }
@@ -40,9 +40,13 @@ abstract contract Ownable is Context {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        require(_owner == msg.sender, "Ownable: caller is not the owner");
         _;
     }
+
+    // function isSellingContract() public view returns (bool) {
+    //     return msg.sender == _sellingContract;
+    // }
 
     /**
      * @dev Leaves the contract without owner. It will not be possible to call
@@ -56,11 +60,15 @@ abstract contract Ownable is Context {
         // _owner = address(0);
     // }
 
+    function setSellingContract(address sc) public onlyOwner {
+        _sellingContract = sc;
+    }
+
     /**
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function transferOwnership(address newOwner) public onlyOwner {
         require(newOwner != address(0), "Ownable: new owner is the zero address");
         // emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;

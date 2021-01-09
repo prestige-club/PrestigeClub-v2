@@ -14,7 +14,8 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
     event Sold(address indexed adr, uint256 amount);
 
     constructor() public {
-        _mint(_msgSender(), 1 ether);
+        // _mint(_msgSender(), 1 ether);
+        _mint(_msgSender(), 100000);
         // _mint(address(this), 100000);
 
     }
