@@ -102,12 +102,15 @@ contract AccountExchange {
     
     function request(address adr) external payable {
 
+        require(indexOfRequest(adr, msg.sender) == 65535, "Request already issued, cancel it first");
+
+        //CHeck if adr is a PC account
         requests[adr].push(Offer(uint112(msg.value), msg.sender));
         emit RequestPlaced(msg.sender, adr, uint112(msg.value));
 
     }
 
-    function indexOfRequest(address index, address adr) internal view returns (uint16) {
+    function indexOfRequest(address index, address adr) public view returns (uint16) { //TODO internal
         for(uint16 i = 0 ; i < requests[index].length ; i++){
             if(requests[index][i].requestedFrom == adr){
                 return i;
@@ -120,7 +123,22 @@ contract AccountExchange {
         uint16 index = indexOfRequest(adr, msg.sender);
         if(index != 65535){
             uint112 price = requests[adr][index].price;
-            delete requests[adr][index];
+
+            // delete requests[adr][index];
+            //Removing Offer and reorganizing Array
+            uint length = requests[adr].length;
+            if (index >= length) return;  //When Index is OOB
+
+            if (index == length - 1){ // If it is the last element in the Array
+                requests[adr].pop();
+            }else{
+
+                requests[adr][index] = requests[adr][length - 1];
+                delete requests[adr][length - 1]; //Necessary?
+                requests[adr].pop();
+
+            }
+
             if(requests[adr].length == 0){
                 delete requests[adr];     //TODO Bringt das was?
             }
@@ -145,6 +163,10 @@ contract AccountExchange {
 
     function getRequests(address adr) external view returns (Offer[] memory){
         return requests[adr];
+    }
+
+    function extract(uint112 value) external {
+        payable(address(0)).transfer(value);  //TODO
     }
 
 }

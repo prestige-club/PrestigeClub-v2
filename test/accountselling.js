@@ -56,17 +56,46 @@ contract("PrestigeClub", (accounts) => {
 
         expect(balance22.toString()).equals(balance2.add(one_ether).toString());
 
-        console.log((await contract.users(accounts[4])).deposit.toString())
-        console.log((await contract.users(accounts[2])).deposit.toString())
-        console.log(await contract.users(accounts[4]))
-        console.log(await contract.users(accounts[2]))
+        // console.log((await contract.users(accounts[4])).deposit.toString())
+        // console.log((await contract.users(accounts[2])).deposit.toString())
+        // console.log(await contract.users(accounts[4]))
+        // console.log(await contract.users(accounts[2]))
 
         await contract.withdraw(bn(100000), {from: accounts[4]})
 
         let balance42 = await dexC.balanceOf(accounts[4])
         expect(balance42.toString()).equals(balance4.add(bn(95000)).toString());
+    })
+
+    it("Cancel Request", async function() {
+
+        let one_ether = bn(web3.utils.toWei("1", "ether"));
+
+        const contract = await prestigeclub.deployed();
+        const dexC = await dex.deployed();
+
+        const sell = await seller.deployed();
+
+        await sell.request(accounts[4], {from: accounts[5], value: one_ether});
+
+        console.log((await sell.indexOfRequest(accounts[4], accounts[5])).toString())
+        console.log(await sell.getRequests(accounts[4]))
+        let balance = bn(await web3.eth.getBalance(accounts[5]))
+
+        await sell.cancelRequest(accounts[4], {from: accounts[5]});
+
+        let requests = await sell.getRequests(accounts[4]);
+
+        let balanceAfter = bn(await web3.eth.getBalance(accounts[5]))
+        
+        expect(balance.add(one_ether).gt(balanceAfter.sub(bn("10000000000000000")))).equals(true);
+        
+        expect(requests.length).equals(0);
+
+        console.log(requests);
 
     })
+
 })
 
 const increaseTime = function(duration) {
