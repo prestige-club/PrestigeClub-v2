@@ -2,7 +2,7 @@ const PrestigeClub = artifacts.require("PrestigeClub");
 const PrestigeClubCalculations = artifacts.require("PrestigeClubCalculations");
 const SafeMath112 = artifacts.require("SafeMath112");
 const PEthDex = artifacts.require("PEthDex");
-const Seller = artifacts.require("AccountExchange");
+// const Seller = artifacts.require("AccountExchange");
 
 module.exports = async function(deployer, network, accounts) {
 
@@ -19,13 +19,13 @@ module.exports = async function(deployer, network, accounts) {
 
   await dex.setExchange(pc.address);
 
-  await deployer.deploy(Seller, pc.address, {from: accounts[1]});
+  // await deployer.deploy(Seller, pc.address, {from: accounts[1]});
 
   console.log("PC: " + pc.address)
   console.log("Dex: " + dex.address)
 
-  let seller = await Seller.deployed()
-  console.log("Seller: " + seller.address);
+  // let seller = await Seller.deployed()
+  // console.log("Seller: " + seller.address);
 
 
   // PEthDex.deployed().then(function(dex) {
