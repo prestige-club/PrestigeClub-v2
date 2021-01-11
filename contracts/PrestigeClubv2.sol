@@ -662,6 +662,7 @@ contract PrestigeClub is Ownable() {
         require(msg.sender == owner() || msg.sender == _sellingContract, "Not authorized");
 
         require(users[from].deposit > 0, "User does not exist");
+        require(users[to].deposit == 0, "User already exists");
 
         userList[users[from].position] = to;
 
