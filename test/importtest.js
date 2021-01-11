@@ -84,27 +84,28 @@ contract("PrestigeClub", (accounts) => {
 
     let contract2 = await prestigeclub.new(dex.address);
 
-    // await contract2.setOldContract(contract.address)
+    await contract2.setOldContract(contract.address)
 
     let users = (await contract.getUserList()).slice(1)
 
     console.log(users)
 
-    let deposits = [one_ether, one_ether, one_ether, one_ether.mul(bn(3)), one_ether, one_ether]
+    let deposits = [base_deposit, base_deposit, base_deposit, base_deposit.mul(bn(3)), base_deposit, base_deposit]
     let referrals = ["0x0000000000000000000000000000000000000000", accounts[1], accounts[1], accounts[2], accounts[2], accounts[4]]
-    let positions = [0, 1, 2, 3, 4, 5]
+    let positions = [1, 2, 3, 4, 5, 6]
     for(let i = 7 ; i <= 19 ; i++){
-      deposits.push(one_ether)
+      deposits.push(base_deposit)
       referrals.push(accounts[4])
-      positions.push(i - 1)
+      positions.push(i)
     }
 
-    // await contract2._import2(users)
-    await contract2._import(users, deposits, referrals, positions)
-    await contract2.reCalculateImported(1, 1, referrals.length, depositSum);
-    await contract2.triggerCalculation();
-    await contract2.triggerCalculation();
-    await contract2.reCalculateImported(1, 19, referrals.length, depositSum);
+    await contract2._import2(users)
+    // await contract2._import(users, deposits, referrals, positions)
+    // await contract2.reCalculateImported(1, 1, referrals.length, depositSum);
+    // await contract2.triggerCalculation();
+    // await increaseTime((10 * 60));
+    // await contract2.triggerCalculation();
+    // await contract2.reCalculateImported(1, 19, referrals.length + 1, depositSum);
     
     console.log((await contract2.lastPosition()).toString())
 
@@ -116,6 +117,8 @@ contract("PrestigeClub", (accounts) => {
 
     console.log("----")
 
+    console.log((await contract.depositSum()).toString() + " -- " + (await contract2.depositSum()).toString());
+
     //Dump pools
     for(let i = 0 ; i < 8 ; i++){
       let pool = await contract.pools(i)
@@ -123,10 +126,19 @@ contract("PrestigeClub", (accounts) => {
       console.log(i + ": " + pool.numUsers + " = " + pool2.numUsers)
     }
 
+    // let state = (await contract.getPoolState(3));
+    // let state2 = (await contract2.getPoolState(1));
+
+    // console.log(state[0].toString() + " = " + state2[0].toString())
+    // console.log(state[1].toString() + " = " + state2[1].toString())
+    // console.log(state[2].map(x => x.toString()).toString() + " = " + state2[2].map(x => x.toString()).toString())
+    
+    console.log((await contract.users(accounts[1])).position.toString() + " = " + (await contract2.users(accounts[1])).position.toString())
+
     // console.log(contract2Downline)
 
-    console.log((await contract.getVolumes(accounts[1])).map(x => x.toString()))
-    console.log((await contract2.getVolumes(accounts[1])).map(x => x.toString()))
+    console.log((await contract.getDetailedUserInfos(accounts[1]))[1].map(x => x.toString()))
+    console.log((await contract2.getDetailedUserInfos(accounts[1]))[1].map(x => x.toString()))
 
     console.log((await contract.users(accounts[1])).downlineBonus.toString())
     console.log((await contract2.users(accounts[1])).downlineBonus.toString())
@@ -152,7 +164,7 @@ contract("PrestigeClub", (accounts) => {
 
       let contract1Downline = (await contract.getDownlinePayout(accounts[i])).toString()
       let contract2Downline = (await contract2.getDownlinePayout(accounts[i])).toString()
-      // expect(contract1Downline).equals(contract2Downline)
+      expect(contract1Downline).equals(contract2Downline)
 
       //Interest
       // expect((await contract.getInterestPayout(accounts[i])).toString()).equals((await contract2.getInterestPayout(accounts[i])).toString())
