@@ -114,13 +114,13 @@ library PrestigeClubCalculations {
         return downlinePayout;
     }
 
-    function getDownline(mapping(address => PrestigeClub.User) storage users) public view returns (uint112, uint128){
+    function getDownline(mapping(address => PrestigeClub.User) storage users, address adr) public view returns (uint112, uint128){
         uint112 sum;
-        for(uint8 i = 0 ; i < users[msg.sender].downlineVolumes.length ; i++){
-            sum += users[msg.sender].downlineVolumes[i];
+        for(uint8 i = 0 ; i < users[adr].downlineVolumes.length ; i++){
+            sum = sum.add(users[adr].downlineVolumes[i]);
         }
 
-        return (sum, getDownlineUsers(users, msg.sender));
+        return (sum, getDownlineUsers(users, adr));
     }
 
     function getDownlineUsers(mapping(address => PrestigeClub.User) storage users, address adr) private view returns (uint128){

@@ -639,8 +639,8 @@ contract PrestigeClub is Ownable() {
         return (users[adr].referrals, users[adr].downlineVolumes);
     }
 
-    function getDownline() public view returns (uint112, uint128){  //TODO Add address user
-        return PrestigeClubCalculations.getDownline(users);
+    function getDownline(address adr) public view returns (uint112, uint128){ 
+        return PrestigeClubCalculations.getDownline(users, adr);
     }
 
     // function getVolumes(address user) external view returns (uint112[5] memory) {
