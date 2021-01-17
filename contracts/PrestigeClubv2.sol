@@ -47,7 +47,7 @@ contract PrestigeClub is Ownable() {
 
     uint32 public lastPosition; //= 0
     
-    uint128 public depositSum; //= 0
+    uint128 public depositSum; //= 0 //Pos 4
     
     Pool[8] public pools;
     
@@ -227,7 +227,7 @@ contract PrestigeClub is Ownable() {
         uint40 dayz = (uint40(block.timestamp) - users[adr].lastPayout) / (payout_interval);  //TODO Maybe SafeMath? Because of Attack where block.timestamp could be manipulated? How probably is it?
         if(dayz >= 1){
             
-            //Interest Payout
+            // Interest Payout
             uint112 deposit = users[adr].deposit;
             //Calculate Base Payouts
             uint8 quote;
@@ -253,7 +253,7 @@ contract PrestigeClub is Ownable() {
             users[adr].lastPayout += (payout_interval * dayz);
             
             emit Payout(adr, interestPayout, directsPayout, poolpayout, downlineBonusAmount, dayz);
-            
+
         }
     }
     
@@ -532,13 +532,15 @@ contract PrestigeClub is Ownable() {
         depositSum = _depositSum;
     }
     
-    function _import(address[] memory sender, uint112[] memory deposit, address[] memory referer, uint32[] memory positions) public onlyOwner {
+    function _import(address[] memory sender, uint112[] memory deposit, address[] memory referer, uint32[] memory positions, 
+        uint8[] memory downlineBonus, uint112[5][] memory volumes) public onlyOwner {
+
         for(uint64 i = 0 ; i < sender.length ; i++){
-            importUser(sender[i], deposit[i], referer[i], positions[i]);
+            importUser(sender[i], deposit[i], referer[i], positions[i], downlineBonus[i], volumes[i]);
         }
     }
     
-    function importUser(address sender, uint112 value, address referer, uint32 position) internal onlyOwner {
+    function importUser(address sender, uint112 value, address referer, uint32 position, uint8 downlineBonus, uint112[5] memory volumes) internal onlyOwner {
 
         require(users[sender].deposit == 0, "Account exists already");
 
@@ -558,82 +560,106 @@ contract PrestigeClub is Ownable() {
 
         users[sender].deposit = value;
         
-        emit NewDeposit(sender, value);
+        // emit NewDeposit(sender, value);
+
+        users[sender].downlineBonus = downlineBonus;
+        users[sender].downlineVolumes = volumes;
         
         updateUserPool(sender);
-        updateDownlineBonusStage(sender);
+        // updateDownlineBonusStage(sender);
         
         if(referer != address(0)){
             users[referer].directSum += value;
     
             updateUserPool(referer);
-            updateDownlineBonusStage(referer);
+            // updateDownlineBonusStage(referer);
         }
         
         // depositSum +_depositSum= value;
         
     }
 
-    // function getPoolUsers(uint32 index, uint32 index2) external view returns (uint112){
-    //     return states[index].numUsers[index2];
+    // function destruct() external onlyOwner{   //TODO REMOVE (only for testnet)
+    //     selfdestruct(payable(owner()));
+    // }
+
+    //0.48 KB
+    // function setPool(uint8 index, uint8 minDirects, uint112 minSumDirects, uint8 payoutQuote) external onlyOwner {
+    //     pools[index].minDirects = minDirects;
+    //     pools[index].minSumDirects = minSumDirects;
+    //     pools[index].payoutQuote = payoutQuote;
+    // }
+
+    // function getPoolState(uint32 index) external view returns (uint128, uint32, uint32[8] memory){
+    //     return (states[index].totalDeposits, states[index].totalUsers, states[index].numUsers);
+    // }
+
+
+    // function importPoolStates(uint states) external onlyOwner{
+        
+    //     oldContract.states(states)
+
     // }
 
     // PrestigeClub oldContract;
 
-    // function setOldContracts(address adr) external{
-    //     oldContract = PrestigeClub(adr);
+    // function setOldContract(address adr) external onlyOwner {
+    //     if(adr == address(0)){
+    //         for(uint8 i = 0 ; i < 8 ; i++){
+    //             (,,,, uint32 numUsers) = oldContract.pools(i);
+    //             pools[i].numUsers = numUsers;
+    //         }
+
+    //         depositSum = oldContract.depositSum();
+
+    //         lastPosition = oldContract.lastPosition();
+
+    //         pushPoolState();
+    //     }else{
+    //         oldContract = PrestigeClub(adr);
+    //     }
     // }
 
-    /*function _import2(address[] memory senders) public onlyOwner {
-        for(uint64 i = 0 ; i < senders.length ; i++){
+    // function _import2(address[] memory senders) public onlyOwner {
+    //     for(uint64 i = 0 ; i < senders.length ; i++){
 
-            address sender = senders[i];
+    //         address sender = senders[i];
 
-            (uint112 deposit, uint112 payout, uint32 position, uint8 qualifiedPools, uint8 downlineBonus, address referer, uint112 directSum, uint40 lastPayout, )
-             = oldContract.users(sender);
+    //         (uint112 deposit, uint112 payout, uint32 position, uint8 qualifiedPools, uint8 downlineBonus, address referer, uint112 directSum, uint40 lastPayout, )
+    //          = oldContract.users(sender);
 
-            if(referer != address(0)){
-                users[referer].referrals.push(sender);
-                users[sender].referer = referer;
-            }
+    //         if(referer != address(0)){
+    //             users[referer].referrals.push(sender);
+    //             users[sender].referer = referer;
+    //         }
 
-            //Copy fields
-            users[sender].deposit = deposit;
-            users[sender].payout = payout;
-            users[sender].qualifiedPools = qualifiedPools;
-            users[sender].downlineBonus = downlineBonus;
-            //users[sender].referer = referer;
-            users[sender].directSum = directSum;
-            //users[sender].lastPayedOut = uint40(block.timestamp);
+    //         //Copy fields
+    //         users[sender].deposit = deposit;
+    //         users[sender].payout = payout;
+    //         users[sender].qualifiedPools = qualifiedPools;
+    //         users[sender].downlineBonus = downlineBonus;
+    //         users[sender].directSum = directSum;
+    //         //users[sender].lastPayedOut = uint40(block.timestamp);
 
-            //users[sender].referrals = oldContract.getUserReferrals(sender);
+    //         //users[sender].referrals = oldContract.getUserReferrals(sender);
 
-            // Create a position for new accounts
-            users[sender].position = position;
-            users[sender].lastPayout = lastPayout;
-            userList.push(sender);
+    //         //TODO update Pools with correct num Users
 
-            if(referer != address(0)){
-                // updateUpline(sender, referer, deposit);
-                updateUpline(sender, referer, deposit);  //Checken
-            }
+    //         // Create a position for new accounts
+    //         users[sender].position = position;
+    //         users[sender].lastPayout = lastPayout;
+    //         userList.push(sender);
 
-            emit NewDeposit(sender, deposit);
-        }
+    //         if(referer != address(0)){
+    //             // updateUpline(sender, referer, deposit);
+    //             updateUpline(sender, referer, deposit);  //Checken
+    //         }
 
-        //Update Pools
+    //         // emit NewDeposit(sender, deposit);
+    //     }
 
-        for(uint8 i = 0 ; i < 8 ; i++){
-            (,,,, uint32 numUsers) = oldContract.pools(i);
-            pools[i].numUsers = numUsers;
-        }
-
-        depositSum = oldContract.depositSum();
-
-        lastPosition = oldContract.lastPosition();
-
-        pushPoolState();
-    }*/
+    //     //Update Pools
+    // }
 
     function getDetailedUserInfos(address adr) public view returns (address[] memory /*referrals */, uint112[5] memory /*volumes*/) {
         return (users[adr].referrals, users[adr].downlineVolumes);
@@ -642,14 +668,6 @@ contract PrestigeClub is Ownable() {
     function getDownline(address adr) public view returns (uint112, uint128){ 
         return PrestigeClubCalculations.getDownline(users, adr);
     }
-
-    // function getVolumes(address user) external view returns (uint112[5] memory) {
-    //     return users[user].downlineVolumes;
-    // }
-
-    // function getUserReferrals(address adr) public view returns (address[] memory referrals){
-    //     return users[adr].referrals;
-    // }
     
     //DEBUGGING
     //Used for extraction of User data in case of something bad happening and fund reversal needed.
