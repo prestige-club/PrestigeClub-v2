@@ -22,30 +22,6 @@ library PrestigeClubCalculations {
 
     using SafeMath112 for uint112;
 
-    // function getInterestPayout(uint112 deposit) public pure returns (uint112){
-
-    //     //Calculate Base Payouts
-    //     uint8 quote;
-    //     if(deposit >= 30 ether){
-    //         quote = 15;
-    //     }else{
-    //         quote = 10;
-    //     }
-        
-    //     return deposit.mul(quote) / 10000;
-    // }
-    
-    // function getDirectsPayout(uint112 directsDepositSum) public pure returns (uint112) {
-
-    //     uint112 directsPayout = directsDepositSum.mul(5) / 10000;
-
-    //     return (directsPayout);
-    // }
-
-    // function getDetailedUserInfos(mapping(address => PrestigeClub.User) storage users) public view returns {
-
-    // }
-
     function getPoolPayout(PrestigeClub.User storage user,  uint40 dayz, PrestigeClub.Pool[8] storage pools, PrestigeClub.PoolState[] storage states) public view returns (uint112){
 
         uint40 length = (uint40)(states.length);
@@ -59,7 +35,7 @@ library PrestigeClubCalculations {
                 uint112 numUsers = states[day].totalUsers;
                 uint112 streamline = uint112(uint112(states[day].totalDeposits).mul(numUsers.sub(user.position))).div(numUsers);
 
-                uint112 payout_day = 0; //TODO Merge into poolpayout, only for debugging
+                uint112 payout_day = 0;
                 uint32 stateNumUsers = 0;
                 for(uint8 j = 0 ; j < user.qualifiedPools ; j++){
                     uint112 pool_base = streamline.mul(pools[j].payoutQuote) / 1000000;
@@ -100,7 +76,7 @@ library PrestigeClubCalculations {
                 uint64 percentage = ownPercentage - quote;
                 if(percentage > 0){ //Requiring positivity and saving gas for 0, since that returns 0
 
-                    downlinePayout = downlinePayout.add(user.downlineVolumes[i].mul(percentage) / 1000000); //TODO If the error occures here, this will prevent fixes (?)
+                    downlinePayout = downlinePayout.add(user.downlineVolumes[i].mul(percentage) / 1000000);
 
                 }
 

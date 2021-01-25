@@ -31,24 +31,39 @@ module.exports = {
     develop: {
       defaultEtherBalance: 100000,
       accounts: 20
+    },
+    main: {
+      provider: () => new HDWalletProvider(mnemonics, `https://mainnet.infura.io/v3/${projectId}`),
+      network_id: 1,       
+      // gas: 12406082,       
+      gasPrice: 70000000000,
+      confirmations: 1,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: false
     }
   },
   //
   compilers: {
     solc: {
       version: "0.6.8",  // ex:  "0.4.20". (Default: Truffle's installed solc)
-      optimizer: {
-        enabled: true,
-        runs: 200
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200000
+        }
       },
       evmVersion: "petersburg"
     }
   },
   plugins: [
-    // 'truffle-plugin-verify',
+    'truffle-plugin-verify',
     "truffle-contract-size"
   ],
   mocha: {
-    reporter: 'eth-gas-reporter'
+    reporter: 'eth-gas-reporter',
+    before_timeout: 1200000,
+    reporterOptions: {
+      gasPrice: 55
+    }
   }
 };

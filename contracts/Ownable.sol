@@ -43,11 +43,7 @@ abstract contract Ownable {
         require(_owner == msg.sender, "Ownable: caller is not the owner");
         _;
     }
-
-    // function isSellingContract() public view returns (bool) {
-    //     return msg.sender == _sellingContract;
-    // }
-
+    
     /**
      * @dev Leaves the contract without owner. It will not be possible to call
      * `onlyOwner` functions anymore. Can only be called by the current owner.

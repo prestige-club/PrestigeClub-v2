@@ -92,7 +92,7 @@ it2("PrestigeClub", (accounts) => {
 
 contract("PrestigeClub", (accounts) => {
 
-  it("Load Test", async function(){
+  it2("Load Test", async function(){
 
     const [dexC, contract] = await initContract(accounts);
 
@@ -114,7 +114,7 @@ contract("PrestigeClub", (accounts) => {
     for(let i = 0 ; i < accounts.length / 3 ; i++){
       console.log("----");
       console.log("Stage: " + (await contract.users(accounts[i])).downlineBonus.toString())
-      console.log("Stage: " + (await contract.getDownline({from: accounts[i]})).toString())
+      console.log("Stage: " + (await contract.getDownline(accounts[i])).toString())
       console.log("Payout: " + (await contract.getDownlinePayout(accounts[i])).toString())
       // console.log("Volume: " + (await accounts[i].getDownline())[0].toString())
     }
@@ -127,7 +127,7 @@ contract("PrestigeClub", (accounts) => {
 
 contract("PrestigeClub", (accounts) => {
 
-  it2("Downlinebonustest 2", async function(){
+  it("Downlinebonustest 2", async function(){
     
     const [dexC, contract] = await initContract(accounts);
 
@@ -189,7 +189,7 @@ contract("PrestigeClub", (accounts) => {
 
 contract("PrestigeClub", (accounts) => {
 
-  it2("Downlinebonus test", async function(){
+  it("Downlinebonus test", async function(){
     
     const [dexC, contract] = await initContract(accounts);
 
@@ -254,6 +254,24 @@ contract("PrestigeClub", (accounts) => {
     expect(userdata1.qualifiedPools.toNumber()).equal(poolsnum);
     expect(userdata1.downlineBonus.toNumber()).equal(downlinestage);
 
+    for(let i = 1 ; i <= 6 ; i++){
+      let info = await contract.users(accounts[i])
+      console.log(i + ":")
+      const v = {
+        address: accounts[i],
+        deposit: info.deposit.toString(),
+        position: info.position,
+        referer: info.referer,
+        qualifiedPools: info.qualifiedPools,
+        downlineBonus: info.downlineBonus};
+      console.log(JSON.stringify(v))
+
+      let volumes = (await contract.getDetailedUserInfos(accounts[i]))[1]
+      console.log(volumes.map(x => x.toString()))
+
+    }    
+
+
     //3. Test upgrade 2nd Level
 
   });
@@ -261,7 +279,7 @@ contract("PrestigeClub", (accounts) => {
 });
 
 contract("PrestigeClub", (accounts) => {
-  it2("Simple basic test", async function() {
+  it("Simple basic test", async function() {
 
     const [dexC, contract] = await initContract(accounts);
 
@@ -328,7 +346,7 @@ contract("PrestigeClub", (accounts) => {
 
   });
 
-  it2("Test minting", async () => {
+  it("Test minting", async () => {
 
     const contract = await prestigeclub.deployed();
     const dexC = await dex.deployed();

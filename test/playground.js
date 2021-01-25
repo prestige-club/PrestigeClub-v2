@@ -1,13 +1,17 @@
+const BN = require("bn.js");
+
 const peths = artifacts.require("PEthDex");
 
 function it2(x){}
+
+let minting = new BN("4000000000000000000000")
 
 contract('PEthDex', (accounts) => {
   it('Test Minting', async () => {
     const pethinstance = await peths.deployed();
     const balance = await pethinstance.balanceOf(accounts[0]);
 
-    assert.equal(balance.valueOf().toString(), "100000", "100000 wasn't in the first account");
+    assert.equal(balance.valueOf().toString(), minting.toString(), "4000 wasn't in the first account");
   });
 
   it('Test Transfer', async () => {
@@ -21,7 +25,7 @@ contract('PEthDex', (accounts) => {
     const balance0 = await peth.balanceOf(accounts[0]);
     const balance1 = await peth.balanceOf(accounts[1]);
 
-    assert.equal(balance0.valueOf().toString(), "99000", "99000 wasn't in the first account");
+    assert.equal(balance0.valueOf().toString(), minting.sub(new BN("1000")), "99000 wasn't in the first account");
     assert.equal(balance1.valueOf().toString(), "1000", "1000 wasn't in the second account");
 
   });
@@ -37,7 +41,7 @@ contract('PEthDex', (accounts) => {
     assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
 
     let supply = await peth.totalSupply();
-    assert.equal(supply.valueOf().toString(), "110000");
+    assert.equal(supply.valueOf().toString(), minting.add(new BN("10000")));
 
     // const getBalance = (account, at) =>
     //   promisify(cb => web3.eth.getBalance(account, at, cb));
@@ -48,10 +52,10 @@ contract('PEthDex', (accounts) => {
     await peth.sell(5000, {from: accounts[2]})
 
     supply = await peth.totalSupply();
-    assert.equal(supply.valueOf(), 105000);
+    assert.equal(supply.valueOf().toString(), minting.add(new BN("5000")).toString());
 
     const balance2 = await peth.balanceOf(accounts[2]);
-    assert.equal(balance2.valueOf(), 5000, "5000 wasn't in the first account");
+    assert.equal(balance2.valueOf().toString(), "5000", "5000 wasn't in the first account");
 
     // let newbalance = await getBalance(accounts[2]);
     // console.log(newbalance)

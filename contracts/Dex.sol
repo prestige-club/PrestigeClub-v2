@@ -2,8 +2,6 @@
 
 pragma solidity >=0.6.0 <0.8.0;
 
-// import "./Context.sol";
-// import "./IERC20.sol";
 import "./libraries/SafeMath.sol";
 import "./Peth.sol";
 
@@ -14,10 +12,9 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
     event Sold(address indexed adr, uint256 amount);
 
     constructor() public {
-        // _mint(_msgSender(), 1 ether);
-        _mint(_msgSender(), 100000);
-        // _mint(address(this), 100000);
-
+        
+        _mint(_msgSender(), 4000 ether);
+        
     }
 
     function deposit() payable public { }
@@ -48,6 +45,7 @@ contract PEthDex is PEth("P-Ethereum", "PETH") {
 
         bool success = payable(msg.sender).send(amount);
         require(success, "Transfer of ether not successful");
+
         emit Sold(msg.sender, amount);
 
     }

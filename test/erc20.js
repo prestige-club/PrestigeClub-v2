@@ -24,12 +24,12 @@ const increaseTime = function(duration) {
 }
 
 contract('dex test', async (accounts) => {
-	it("shoud init init with contract balance of 1000 tokens", async () => {
+	it("shoud init init with contract balance of 4000 tokens", async () => {
 		let dexi = await dex.deployed();
 
 		let bal = await dexi.balanceOf(accounts[0]);
 
-		assert.equal(bal.toString(), "1000000000000000000");
+		assert.equal(bal.toString(), "4000000000000000000000");
 	})
 	
 	it("should buy tokens", async () => {

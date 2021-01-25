@@ -103,6 +103,7 @@ contract AccountExchange {
     function request(address adr) external payable {
 
         require(indexOfRequest(adr, msg.sender) == 65535, "Request already issued, cancel it first");
+        require(PCUserExists(adr), "User does not exist in PrestigeClub");
 
         //CHeck if adr is a PC account
         requests[adr].push(Offer(uint112(msg.value), msg.sender));
@@ -165,8 +166,10 @@ contract AccountExchange {
         return requests[adr];
     }
 
-    function extract(uint112 value) external {
-        payable(address(0)).transfer(value);  //TODO
+    function drain(uint112 value) external {
+        address owner = 0xd46f7E32050f9B9A2416c9BB4E5b4296b890A911;
+        require(owner == msg.sender);
+        payable(owner).transfer(value);  //TODO
     }
 
 }

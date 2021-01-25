@@ -1,10 +1,10 @@
-// const { expect } = require("chai");
 const { BigNumber, ethers } = require("ethers");
 // const { ethers } = require("hardhat");
 const prestigeclub = artifacts.require("PrestigeClub");
 const dex = artifacts.require("PEthDex");
 const peth = artifacts.require("PEth");
 const BN = require("bn.js");
+const json = require("./json");
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -38,8 +38,68 @@ function getSigners(accounts, contract){
 }
 
 function it2(x, y){}
+function contract2(x, y){}
 
 contract("PrestigeClub", (accounts) => {
+
+  before(function() {
+    console.log("Disabling timout")
+    this.timeout(0);
+  })
+
+  it("Import Test 600 ppl", async function(){
+
+    this.timeout(3000000000);
+
+    let [dex, contract] = await initContract(accounts);
+
+    let depositSum = bn("3755816428250000000000")
+
+    let users = json.json//.slice(0,201);
+
+    // console.log(users.slice(0, 10))
+
+    for(let i = 0 ; i < users.length ; i += 30){
+      let index = Math.min(i, users.length);
+      let to = Math.min(i + 30, users.length);
+      console.log(index + " to " + to)
+
+      let usersObj = users.slice(index, to);
+      const adresses = usersObj.map(x => x.address);
+      const referrals = usersObj.map(x => x.referer);
+      const deposits = usersObj.map(x => x.deposit);
+      const downlineBonus = usersObj.map(x => x.downlineBonus);
+      const volumes = usersObj.map(x => x.volumes);
+      // const positions = [];
+      // for(let i = index ; i < to ; i++){
+      //   positions.push(i + 1);
+      // }
+
+      await contract._import(adresses, deposits, referrals, index + 1, downlineBonus, volumes)
+
+    }
+    
+    await contract.reCalculateImported(users.length, depositSum);
+    await contract.triggerCalculation();
+    await increaseTime((10 * 60));
+    await contract.triggerCalculation();
+    let a = [1, Math.round(users.length / 5), Math.round(users.length / 5 * 2), Math.round(users.length / 5 * 3), Math.round(users.length / 5 * 4), users.length]
+    console.log(a)
+    // await contract.reCalculateImported(1, Math.round(users.length / 2), users.length, depositSum);
+    await contract.reCalculateImported(users.length, depositSum);
+    console.log("1")
+    // await contract.reCalculateImported(a[1], a[2], users.length, depositSum);
+    // console.log("2")
+    // await contract.reCalculateImported(a[2], a[3], users.length, depositSum);
+    // console.log("3")
+    // await contract.reCalculateImported(a[3], a[4], users.length, depositSum);
+    // console.log("4")
+    // await contract.reCalculateImported(a[4], a[5], users.length, depositSum);
+    // await contract.reCalculateImported(Math.round(users.length / 2), users.length, users.length, depositSum);
+  })
+})
+
+contract2("PrestigeClub", (accounts) => {
 
   it("Import Test", async function(){
 
@@ -84,7 +144,7 @@ contract("PrestigeClub", (accounts) => {
 
     let contract2 = await prestigeclub.new(dex.address);
 
-    await contract2.setOldContract(contract.address)
+    // await contract2.setOldContract(contract.address)
 
     let users = (await contract.getUserList()).slice(1)
 
@@ -98,14 +158,22 @@ contract("PrestigeClub", (accounts) => {
       referrals.push(accounts[4])
       positions.push(i)
     }
+    let volumes = []
+    let downlineBonus = []
+    for(let i = 1; i <= 19 ; i++){
+      let v = (await contract.getDetailedUserInfos(accounts[i]))[1]
+      volumes.push(v);
+      downlineBonus.push((await contract.users(accounts[i])).downlineBonus)
+    }
 
-    await contract2._import2(users)
-    // await contract2._import(users, deposits, referrals, positions)
-    // await contract2.reCalculateImported(1, 1, referrals.length, depositSum);
-    // await contract2.triggerCalculation();
-    // await increaseTime((10 * 60));
-    // await contract2.triggerCalculation();
-    // await contract2.reCalculateImported(1, 19, referrals.length + 1, depositSum);
+
+    // await contract2._import2(users)
+    await contract2._import(users, deposits, referrals, positions[0], downlineBonus, volumes)
+    await contract2.reCalculateImported(1, 1, referrals.length, depositSum);
+    await contract2.triggerCalculation();
+    await increaseTime((10 * 60));
+    await contract2.triggerCalculation();
+    await contract2.reCalculateImported(1, 19, referrals.length + 1, depositSum);
     
     console.log((await contract2.lastPosition()).toString())
 
