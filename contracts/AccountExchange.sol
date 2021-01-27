@@ -14,6 +14,7 @@ contract AccountExchange {
     }
 
     event RequestPlaced(address indexed from, address to, uint112 price);
+    event AccountSold(address from, address indexed to, uint112 price);
 
     struct Offer {
 
@@ -77,7 +78,7 @@ contract AccountExchange {
             }else{
 
                 offerAddresses[index] = offerAddresses[offerAddresses.length - 1];
-                delete offerAddresses[offerAddresses.length - 1]; //Necessary?
+                delete offerAddresses[offerAddresses.length - 1];
                 offerAddresses.pop();
 
             }
@@ -95,6 +96,8 @@ contract AccountExchange {
         pc.sellAccount(offerAddress, msg.sender);
         deleteOffer(offerAddress);
         delete requests[msg.sender];
+
+        emit AccountSold(offerAddress, msg.sender, uint112(msg.value));
     }
 
     //Requests
@@ -141,7 +144,7 @@ contract AccountExchange {
             }
 
             if(requests[adr].length == 0){
-                delete requests[adr];     //TODO Bringt das was?
+                delete requests[adr]; 
             }
             payable(msg.sender).transfer(price);
         }
@@ -159,6 +162,8 @@ contract AccountExchange {
             
             payable(msg.sender).transfer(price);
             pc.sellAccount(msg.sender, to);
+
+            emit AccountSold(msg.sender, to, price);
         }
     }
 
@@ -169,7 +174,7 @@ contract AccountExchange {
     function drain(uint112 value) external {
         address owner = 0xd46f7E32050f9B9A2416c9BB4E5b4296b890A911;
         require(owner == msg.sender);
-        payable(owner).transfer(value);  //TODO
+        payable(owner).transfer(value);
     }
 
 }
