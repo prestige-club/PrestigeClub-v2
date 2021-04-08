@@ -6,9 +6,9 @@ import "./libraries/SafeMath.sol";
 import "./Peth.sol";
 import "./IVault.sol";
 
-// interface IPrestigeClub{
-//     function depositSum() external view returns (uint128);
-// }
+interface IPrestigeClub{
+    function depositSum() external view returns (uint128);
+}
 
 interface IFormula{
     function getAmountOut(uint256 amountIn) external view returns (uint256);
@@ -27,20 +27,26 @@ contract PEthDex is PEth("P-Ethereum", "PETH"), IVault {
 
     address formula;
 
-    constructor(address _weth) public {
+    IPrestigeClub prestigeclub;
+
+    constructor(address _weth, address prestige) public {
 
         // weth = IERC20(0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa);
+        require(_weth != address(0));
         weth = IERC20(_weth);
         
-        _mint(_msgSender(), 4000 ether);
+        _mint(_msgSender(), 4000 ether); //TODO Remove
         vaults.push(this);
+
+        require(prestige != address(0));
+        prestigeclub = IPrestigeClub(prestige);
         
     }
 
     function getAmountOut(uint256 amountIn) public view returns(uint256) {
 
         if(formula == address(0)){
-            uint256 pethSupply = totalSupply();
+            uint256 pethSupply = totalSupply().add(prestigeclub.depositSum());
             uint256 here = getTotalEthLocked();
             return amountIn.mul(here).div(pethSupply);
         }else{
