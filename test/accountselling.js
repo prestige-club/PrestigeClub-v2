@@ -4,18 +4,27 @@ const prestigeclub = artifacts.require("PrestigeClub");
 const dex = artifacts.require("PEthDex");
 const peth = artifacts.require("PEth");
 const seller = artifacts.require("AccountExchange");
+const WETH = artifacts.require("WETH");
 
 async function initContract(accounts){
 
     const contract = await prestigeclub.deployed();
     const dexC = await dex.deployed();
+    const weth = await WETH.deployed();
 
     await dexC.setExchange(contract.address);
 
-    for(let i = 0 ; i < accounts.length ; i++){
-        await dexC.buy({from: accounts[i], value: web3.utils.toWei("90", "ether")})
+    await weth.deposit({from: accounts[0], value: web3.utils.toWei("3000", "ether")})
+    await weth.approve(dexC.address, web3.utils.toWei("3000", "ether"))
+    await weth.transfer(dexC.address, web3.utils.toWei("400", "ether"), {from: accounts[0]})
+
+    for(let i = 0 ; i < accounts.length / 2 ; i++){
+        await weth.deposit({from: accounts[i], value: web3.utils.toWei("120", "ether")})
+        await weth.approve(dexC.address, web3.utils.toWei("1000", "ether"), {from: accounts[i]})
+        await dexC.buyPeth(web3.utils.toWei("90", "ether"), {from: accounts[i]})
+        console.log((await dexC.balanceOf(accounts[i])).toString())
     }
-    return [dexC, contract];
+    return [dexC, contract, weth];
     
 }
   
@@ -28,12 +37,13 @@ contract("PrestigeClub", (accounts) => {
 
     it("Selling Account Test", async function(){
 
-        const [dexC, contract] = await initContract(accounts);
+        const [dexC, contract, weth] = await initContract(accounts);
 
-        const sell = await seller.new(contract.address);
+        // const sell = await seller.new(contract.address);
+        const sell = await seller.deployed();
         await contract.setSellingContract(sell.address);
 
-        let min_deposit = bn("20000");
+        let min_deposit = bn(web3.utils.toWei("0.2", "ether"));
         let one_ether = bn(web3.utils.toWei("1", "ether")); //1000
 
         await contract.methods['recieve(uint112)'](one_ether.mul(bn(3)), {from: accounts[1]});
@@ -42,15 +52,19 @@ contract("PrestigeClub", (accounts) => {
         
         await contract.methods["recieve(uint112,address)"](min_deposit, accounts[2], {from: accounts[3]});
 
+        console.log((await sell.PCUserExists(accounts[2])).toString());
+
         await increaseTime((100 * 60 * 100000));
 
         await sell.offer(one_ether, {from: accounts[2]})
 
-        let balance2 = bn(await web3.eth.getBalance(accounts[2]))
+        let balance2 = bn(await weth.balanceOf(accounts[2]))
 
-        await sell.buy(accounts[2], {from: accounts[4], value: one_ether})
+        await weth.approve(sell.address, one_ether, {from: accounts[4]});
 
-        let balance22 = bn(await web3.eth.getBalance(accounts[2]))
+        await sell.buy(accounts[2], one_ether, {from: accounts[4]})
+
+        let balance22 = bn(await weth.balanceOf(accounts[2]))
 
         let balance4 = await dexC.balanceOf(accounts[4])
 
@@ -64,7 +78,7 @@ contract("PrestigeClub", (accounts) => {
         await contract.withdraw(bn(100000), {from: accounts[4]})
 
         let balance42 = await dexC.balanceOf(accounts[4])
-        expect(balance42.toString()).equals(balance4.add(bn(95000)).toString());
+        expect(balance42.toString()).equals(balance4.add(bn(100000)).toString());
     })
 
     it("Cancel Request", async function() {
@@ -73,20 +87,23 @@ contract("PrestigeClub", (accounts) => {
 
         const contract = await prestigeclub.deployed();
         const dexC = await dex.deployed();
+        const weth = await WETH.deployed();
 
         const sell = await seller.deployed();
 
-        await sell.request(accounts[4], {from: accounts[5], value: one_ether});
+        await weth.approve(sell.address, one_ether, {from: accounts[5]});
+
+        await sell.request(accounts[4], one_ether, {from: accounts[5]});
 
         console.log((await sell.indexOfRequest(accounts[4], accounts[5])).toString())
         console.log(await sell.getRequests(accounts[4]))
-        let balance = bn(await web3.eth.getBalance(accounts[5]))
+        let balance = bn(await weth.balanceOf(accounts[5]))
 
         await sell.cancelRequest(accounts[4], {from: accounts[5]});
 
         let requests = await sell.getRequests(accounts[4]);
 
-        let balanceAfter = bn(await web3.eth.getBalance(accounts[5]))
+        let balanceAfter = bn(await weth.balanceOf(accounts[5]))
         
         expect(balance.add(one_ether).gt(balanceAfter.sub(bn("10000000000000000")))).equals(true);
         

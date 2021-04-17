@@ -3,6 +3,8 @@ const { BigNumber, ethers } = require("ethers");
 const prestigeclub = artifacts.require("PrestigeClub");
 const dex = artifacts.require("PEthDex");
 const peth = artifacts.require("PEth");
+const StableFormula = artifacts.require("StableFormula");
+const WETH = artifacts.require("WETH");
 const BN = require("bn.js");
 const json = require("./json");
 
@@ -19,11 +21,16 @@ async function call(call) {
 async function initContract(accounts){
   const contract = await prestigeclub.deployed();
   const dexC = await dex.deployed();
+  const stableFormula = await StableFormula.new();
+  const weth = await WETH.deployed();
 
   await dexC.setExchange(contract.address);
+  await dexC.setFormula(stableFormula.address);
 
   for(let i = 0 ; i < accounts.length ; i++){
-    await dexC.buy({from: accounts[i], value: web3.utils.toWei("90", "ether")})
+    await weth.deposit({value: web3.utils.toWei("90", "ether"), from: accounts[i]})
+    await weth.approve(dexC.address, web3.utils.toWei("90", "ether"), {from: accounts[i]})
+    await dexC.buyPeth(web3.utils.toWei("90", "ether"), {from: accounts[i]})
   }
   return [dexC, contract];
   

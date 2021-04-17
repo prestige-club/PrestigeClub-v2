@@ -30,7 +30,7 @@ contract('PEthDex', (accounts) => {
 
   });
 
-  it('Test Buying / Selling', async () => {
+  it2('Test Buying / Selling', async () => {
     const peth = await peths.deployed();
 
     await peth.deposit({from: accounts[3], value: 10000000})

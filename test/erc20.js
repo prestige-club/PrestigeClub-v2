@@ -1,4 +1,6 @@
 const dex = artifacts.require("PEthDex");
+const WETH = artifacts.require("WETH");
+const StableFormula = artifacts.require("StableFormula");
 
 const increaseTime = function(duration) {
   const id = Date.now()
@@ -34,10 +36,16 @@ contract('dex test', async (accounts) => {
 	
 	it("should buy tokens", async () => {
 		let dexi = await dex.deployed();
-		
+		let weth = await WETH.deployed();
+		let formula = await StableFormula.new();
+
+		await dexi.setFormula(formula.address);
+
 		var acc = accounts[1];
 		
-		await dexi.buy({from: acc, value: web3.utils.toWei("5500", "finney")});
+		await weth.deposit({from: acc, value: web3.utils.toWei("5500", "finney")});
+		await weth.approve(dexi.address, web3.utils.toWei("5500", "finney"), {from: acc});
+		await dexi.buyPeth(web3.utils.toWei("5500", "finney"), {from: acc});
 		
 		let tokenBal = await dexi.balanceOf(acc);
 
