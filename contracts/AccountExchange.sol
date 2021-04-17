@@ -4,17 +4,20 @@ pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./PrestigeClubv2.sol";
+import "./IERC20.sol";
 
 contract AccountExchange {
 
     PrestigeClub pc;
+    IERC20 weth;
 
-    constructor(address prestigeClub) public {
+    constructor(address _weth, address prestigeClub) public {
+        weth = IERC20(_weth);
         pc = PrestigeClub(prestigeClub);
     }
 
-    event RequestPlaced(address indexed from, address to, uint112 price);
-    event AccountSold(address from, address indexed to, uint112 price);
+    event RequestPlaced(address indexed from, address to, uint256 price);
+    event AccountSold(address from, address indexed to, uint256 price);
 
     struct Offer {
 
@@ -27,7 +30,7 @@ contract AccountExchange {
     mapping(address => Offer) public offers;
     address[] offerAddresses;
 
-    function PCUserExists(address user) internal view returns (bool) {
+    function PCUserExists(address user) public view returns (bool) { //TODO Internal
         (uint112 deposit,,,,,,,,) = pc.users(user);
         return deposit > 0;
     }
@@ -41,10 +44,11 @@ contract AccountExchange {
         //Check, that account is in PrestigeClub
         require(PCUserExists(msg.sender), "User does not exist in PrestigeClub");
 
-        offers[msg.sender] = Offer(price, address(0));
-        if(indexOfOffer(msg.sender) == 65535){
+        if(offers[msg.sender].price == 0){
             offerAddresses.push(msg.sender);
         }
+
+        offers[msg.sender] = Offer(price, address(0));
 
     }
 
@@ -85,32 +89,35 @@ contract AccountExchange {
         }
     }
 
-    function buy(address offerAddress) external payable {
+    function buy(address offerAddress, uint256 amount) external {
 
         require(offerAddress != address(0), "Address is null");
         require(offers[offerAddress].price > 0, "Offer does not exist");
-        require(offers[offerAddress].price <= msg.value, "Not enough money paid");
+        require(offers[offerAddress].price <= amount, "Not enough money paid");
         require(offerAddress != msg.sender, "You cannot buy yourself");
 
-        payable(offerAddress).transfer(msg.value);
+        weth.transferFrom(msg.sender, offerAddress, amount);
+        // payable(offerAddress).transfer(msg.value);
         pc.sellAccount(offerAddress, msg.sender);
         deleteOffer(offerAddress);
         delete requests[msg.sender];
 
-        emit AccountSold(offerAddress, msg.sender, uint112(msg.value));
+        emit AccountSold(offerAddress, msg.sender, amount);
     }
 
     //Requests
     mapping(address => Offer[]) public requests;
     
-    function request(address adr) external payable {
+    function request(address adr, uint256 amount) external {
 
         require(indexOfRequest(adr, msg.sender) == 65535, "Request already issued, cancel it first");
         require(PCUserExists(adr), "User does not exist in PrestigeClub");
 
+        weth.transferFrom(msg.sender, address(this), amount);
+
         //CHeck if adr is a PC account
-        requests[adr].push(Offer(uint112(msg.value), msg.sender));
-        emit RequestPlaced(msg.sender, adr, uint112(msg.value));
+        requests[adr].push(Offer(uint112(amount), msg.sender));
+        emit RequestPlaced(msg.sender, adr, amount);
 
     }
 
@@ -146,7 +153,7 @@ contract AccountExchange {
             if(requests[adr].length == 0){
                 delete requests[adr]; 
             }
-            payable(msg.sender).transfer(price);
+            weth.transfer(msg.sender, price);
         }
     }
 
@@ -160,7 +167,7 @@ contract AccountExchange {
                 deleteOffer(msg.sender);
             }
             
-            payable(msg.sender).transfer(price);
+            weth.transfer(msg.sender, price);
             pc.sellAccount(msg.sender, to);
 
             emit AccountSold(msg.sender, to, price);
@@ -174,7 +181,7 @@ contract AccountExchange {
     function drain(uint112 value) external {
         address owner = 0xd46f7E32050f9B9A2416c9BB4E5b4296b890A911;
         require(owner == msg.sender);
-        payable(owner).transfer(value);
+        weth.transfer(owner, value);
     }
 
 }
