@@ -52,6 +52,8 @@ contract PrestigeClub is Ownable() {
     uint32 public lastPosition; //= 0
     
     uint128 public depositSum; //= 0 //Pos 4
+
+    uint128 public totalWithdrawn;
     
     Pool[8] public pools;
     
@@ -139,7 +141,7 @@ contract PrestigeClub is Ownable() {
     //Investment function for new deposits
     function recieve(uint112 amount) public {
         User storage user = users[msg.sender];
-        require((user.deposit * 20 / 19) >= minDeposit || amount >= minDeposit, "Minimum deposit value not reached");
+        require(user.deposit >= minDeposit || amount >= minDeposit, "Minimum deposit value not reached");
         
         address sender = msg.sender;
 
@@ -168,7 +170,7 @@ contract PrestigeClub is Ownable() {
         address referer = user.referer; //can put outside because referer is always set since setReferral() gets called before recieve() in recieve(address)
 
         if(referer != address(0)){
-            updateUpline(sender, referer, value);
+            updateUpline(sender, referer, amount);
         }
 
         //Update Payouts
@@ -176,23 +178,21 @@ contract PrestigeClub is Ownable() {
             updatePayout(sender);
         }
 
-        user.deposit = user.deposit.add(value);
+        user.deposit = user.deposit.add(amount);
         
-        //Transfer fee
-        peth.transfer(owner(), (amount - value));
-        
-        emit NewDeposit(sender, value);
+        emit NewDeposit(sender, amount);
         
         updateUserPool(sender);
         updateDownlineBonusStage(sender);
         if(referer != address(0)){
-            users[referer].directSum = users[referer].directSum.add(value);
+            users[referer].directSum = users[referer].directSum.add(amount);
 
             updateUserPool(referer);
             updateDownlineBonusStage(referer);
         }
         
-        depositSum = depositSum + value; //Won´t do an overflow since value is uint112 and depositSum 128
+        require(depositSum + amount > depositSum, "Overflow");
+        depositSum = depositSum + amount; //Won´t do an overflow since value is uint112 and depositSum 128
 
     }
     
@@ -381,15 +381,13 @@ contract PrestigeClub is Ownable() {
     function withdraw(uint112 amount) public {
 
         User storage user = users[msg.sender];
-        require(user.lastPayedOut + 12 hours < block.timestamp, "10");
+        require(user.lastPayedOut + 12 hours < block.timestamp, "Payout only possible all 12 hours");
         require(amount < user.deposit.mul(3), "11");
 
         triggerCalculation();
         updatePayout(msg.sender);
 
         require(user.payout >= amount, "Not enough payout available");
-        
-        uint112 transfer = amount * 19 / 20;
         
         user.payout -= amount;
 
@@ -400,10 +398,9 @@ contract PrestigeClub is Ownable() {
             peth.mint(uint256(amount));
         }
         
-        peth.transfer(msg.sender, transfer);
+        peth.transfer(msg.sender, amount);
         
-        peth.transfer(owner(), (amount - transfer));
-        
+        totalWithdrawn += amount;
         emit Withdraw(msg.sender, amount);
         
     }
@@ -535,7 +532,7 @@ contract PrestigeClub is Ownable() {
         User storage userFrom = users[from];
 
         require(userFrom.deposit > 0, "User does not exist");
-        require(users[to].deposit == 0, "User already exists");
+        require(users[to].deposit == 0 || to == address(0), "User already exists");
 
         userList[userFrom.position] = to;
 
