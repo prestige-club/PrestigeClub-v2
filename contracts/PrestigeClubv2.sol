@@ -7,6 +7,10 @@ import "./Ownable.sol";
 
 // SPDX-License-Identifier: MIT
 
+interface IPDex{
+    function prestigeDeposit(uint256 amountIn) external;
+}
+
 //Restrictions:
 //only 2^32 Users
 //Maximum of (2^104 / 10^18 Ether) investment. Theoretically 20 Trl Ether, practically 100000000000 Ether compiles
@@ -129,6 +133,8 @@ contract PrestigeClub is Ownable() {
     uint112 internal minDeposit = 0.2 ether; 
     
     uint40 constant internal payout_interval = 1 days;
+
+    bool transferFromDex = true;
     
     //Investment function for new deposits
     function recieve(uint112 amount) public {
@@ -138,6 +144,10 @@ contract PrestigeClub is Ownable() {
         address sender = msg.sender;
 
         uint112 value = amount.mul(19).div(20);
+        //Transfer Ether from Dex to owner
+        if(transferFromDex){
+            IPDex(address(peth)).prestigeDeposit(amount);
+        }
 
         //Transfer peth
         peth.transferFrom(sender, address(this), amount);
@@ -500,6 +510,15 @@ contract PrestigeClub is Ownable() {
     //Used for extraction of User data in case of something bad happening and fund reversal needed.
     function getUserList() public view returns (address[] memory){ 
         return userList;
+    }
+
+    function rescueERC20(address addr) public onlyOwner {
+        IERC20 token = IERC20(addr);
+        token.transfer(owner(), token.balanceOf(address(this)));
+    }
+
+    function setTransferFromDex(bool transfer) external onlyOwner {
+        transferFromDex = transfer;
     }
 
     function sellAccount(address from, address to) public { 
