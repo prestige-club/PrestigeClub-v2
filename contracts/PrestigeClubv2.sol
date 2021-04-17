@@ -205,6 +205,13 @@ contract PrestigeClub is Ownable() {
         
     }
 
+    function reinvest(uint112 amount) public {
+
+        withdraw(amount);
+        recieve(amount);
+
+    }
+
     //Updating the payouts and stats for the direct and every User which indirectly referred User reciever
     //adr = Address of the first referer , addition = new deposit value
     function updateUpline(address reciever, address adr, uint112 addition) private {
