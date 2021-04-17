@@ -38,8 +38,6 @@ contract PrestigeClub is Ownable() {
     
     event NewDeposit(address indexed addr, uint112 amount);
     event PoolReached(address indexed addr, uint8 pool);
-    // event DownlineBonusStageReached(address indexed adr, uint8 stage);
-    // event Referral(address indexed addr, address indexed referral);
     
     event Payout(address indexed addr, uint112 interest, uint112 direct, uint112 pool, uint112 downline, uint40 dayz); 
     
@@ -98,14 +96,14 @@ contract PrestigeClub is Ownable() {
         //Note, values are not final, adapted for testing purposes
 
         //Prod values
-        pools[0] = Pool(3 ether, 1, 3 ether, 130, 0);
-        pools[1] = Pool(15 ether, 3, 5 ether, 130, 0);
-        pools[2] = Pool(15 ether, 4, 44 ether, 130, 0);
-        pools[3] = Pool(30 ether, 10, 105 ether, 130, 0);
-        pools[4] = Pool(45 ether, 15, 280 ether, 130, 0);
-        pools[5] = Pool(60 ether, 20, 530 ether, 130, 0);
-        pools[6] = Pool(150 ether, 20, 1470 ether, 80, 0);
-        pools[7] = Pool(300 ether, 20, 2950 ether, 80, 0);
+        pools[0] = Pool(1 ether, 1, 1 ether, 130, 0);
+        pools[1] = Pool(3 ether, 3, 10 ether, 130, 0);
+        pools[2] = Pool(5 ether, 4, 20 ether, 130, 0);
+        pools[3] = Pool(15 ether, 10, 100 ether, 130, 0);
+        pools[4] = Pool(30 ether, 15, 280 ether, 130, 0);
+        pools[5] = Pool(45 ether, 20, 500 ether, 130, 0);
+        pools[6] = Pool(60 ether, 20, 1000 ether, 80, 0);
+        pools[7] = Pool(75 ether, 20, 1500 ether, 80, 0);
 
         downlineBonuses[0] = DownlineBonusStage(3, 50);
         downlineBonuses[1] = DownlineBonusStage(4, 100);
@@ -133,8 +131,10 @@ contract PrestigeClub is Ownable() {
     }
     
     uint112 internal minDeposit = 0.2 ether; 
+    // uint112 internal minDeposit = 1000 wei; 
     
     uint40 constant internal payout_interval = 1 days;
+    // uint40 constant internal payout_interval = 30 minutes;
 
     bool transferFromDex = true;
     
@@ -145,7 +145,6 @@ contract PrestigeClub is Ownable() {
         
         address sender = msg.sender;
 
-        uint112 value = amount.mul(19).div(20);
         //Transfer Ether from Dex to owner
         if(transferFromDex){
             IPDex(address(peth)).prestigeDeposit(amount);
@@ -550,6 +549,10 @@ contract PrestigeClub is Ownable() {
         for(uint16 i = 0 ; i < users[from].referrals.length ; i++){
             users[userFrom.referrals[i]].referer = to;
         }
+
+        // if(to == address(0)){
+
+        // }
 
         users[to] = userFrom;
         delete users[from];
