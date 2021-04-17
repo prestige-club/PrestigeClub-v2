@@ -1,4 +1,4 @@
-const { projectId, mnemonics } = require('./secrets.json');
+const { projectId, mnemonics, pk } = require('./secrets.json');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 module.exports = {
@@ -18,7 +18,13 @@ module.exports = {
       host: "127.0.0.1",
       port: 7545,
       network_id: "*",
-      gas: 8721975,
+      gas: 8000000,
+    },
+    gnache: {
+      host: "127.0.0.1",
+      port: 7545,
+      network_id: "*",
+      gas: 8000000,
     },
     ropsten: {
       provider: () => new HDWalletProvider(mnemonics, `https://ropsten.infura.io/v3/${projectId}`),
@@ -36,11 +42,28 @@ module.exports = {
       provider: () => new HDWalletProvider(mnemonics, `https://mainnet.infura.io/v3/${projectId}`),
       network_id: 1,       
       // gas: 12406082,       
-      gasPrice: 70000000000,
+      gasPrice: 57000000000,
       confirmations: 1,    // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: false
-    }
+    },
+    mumbai: {
+      provider: () => new HDWalletProvider(pk, `https://rpc-mumbai.matic.today`),
+      network_id: 80001,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+      gasPrice: 1000000000,
+    },
+    matic: {
+      provider: () => new HDWalletProvider(pk, `https://rpc-mainnet.matic.network`),
+      network_id: 137,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+      gasPrice: 1000000000,
+      networkCheckTimeout: 1000000
+    },
   },
   //
   compilers: {
@@ -56,7 +79,9 @@ module.exports = {
     }
   },
   plugins: [
-    'truffle-plugin-verify',
+    // 'truffle-plugin-verify',
+    // 'truffle-plugin-blockscout-verify',
+    "truffle-source-verify",
     "truffle-contract-size"
   ],
   mocha: {
