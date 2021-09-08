@@ -44,18 +44,22 @@ contract CakeClub is Ownable(){
         vault = CakeVault(_vault);
         cake = IERC20(vault.cake());
         cake.approve(_vault, ~uint256(0));
+        estimatedPeth = 1000;
+        rewardLastEstimation = 2000;
     }
 
     uint256 alreadyWithdrawn;
     uint256 depositedCake;
     uint256 public estimatedPeth;
+    uint256 public rewardLastEstimation;
 
     uint256 last_payout_calculation = block.timestamp;
-    uint256 payout_interval = 1 days;
+    uint256 constant payout_interval = 5 minutes;//1 days;
     uint256 daily_rate = 3000 * 1e12;//2706 * 1e12;  //1e18 == 100%
     uint256 dust = 100000;
 
-    uint256 ownerShares = 15;
+    uint256 constant ownerShares = 15;
+    uint256 public ownerProvision;
 
     event Log(string title, uint256 value);
 
@@ -75,13 +79,12 @@ contract CakeClub is Ownable(){
         depositedCake += balance;
     }
 
-
     function totalProfit() public view returns (uint256) {
         return vault.pendingCake(0, address(this)) + alreadyWithdrawn;
     }
 
     function output(uint256 peth) public view returns (uint256) {
-        return 1 ether * peth / estimatedPeth * totalProfit() / 1 ether;
+        return 1 ether * peth / estimatedPeth * rewardLastEstimation / 1 ether;
     }
 
     function withdraw(uint256 peth, address to) public onlyPrestige {
@@ -97,6 +100,7 @@ contract CakeClub is Ownable(){
         emit Log("Pending Cake", vault.pendingCake(0, address(this)));
 
         uint256 pending = vault.pendingCake(0, address(this));
+        // uint256 pending = pendingTotal * 85 / 100;
         uint256 withdrawAmount = 0;
         if(pending < cakeAmount){ //Since re-staking will occur, withdrawal of Stake is possible
             withdrawAmount = cakeAmount - pending;
@@ -110,7 +114,8 @@ contract CakeClub is Ownable(){
         alreadyWithdrawn += pending;
 
         uint256 ownerSharesC = cakeAmount * ownerShares / 100;
-        cake.transfer(owner(), ownerSharesC);
+        // cake.transfer(owner(), ownerSharesC);
+        ownerProvision += ownerSharesC;
         cake.transfer(to, cakeAmount - ownerSharesC);
 
         uint256 balanceLeft = cake.balanceOf(address(this));
@@ -124,7 +129,8 @@ contract CakeClub is Ownable(){
 
         while(block.timestamp > last_payout_calculation + payout_interval){
 
-            estimatedPeth = estimatedPeth + uint256(prestigeclub.depositSum()).mul(daily_rate).div(1e18) ;
+            estimatedPeth = estimatedPeth + uint256(prestigeclub.depositSum()).mul(daily_rate).div(1e18);
+            rewardLastEstimation = totalProfit();
 
             last_payout_calculation += payout_interval;
         }
@@ -144,10 +150,26 @@ contract CakeClub is Ownable(){
         daily_rate = rate;
     }
 
-    function rebalance() external {
-        uint256 pending = cake.balanceOf(address(this));
+    // function rebalance() external {
+    //     uint256 pending = cake.balanceOf(address(this));
+    //     alreadyWithdrawn += pending;
+    //     vault.enterStaking(0); //pending
+    // }
+
+    function payoutProvision() external onlyOwner {
+        cake.transfer(owner(), ownerProvision);
+    }
+
+    function initialInvest(uint256 amount) external onlyOwner {
+
+        uint256 pending = vault.pendingCake(0, address(this));
+
+        //Invest into Masterchef
+        vault.enterStaking(amount); //Expects that cake already lie on address(this)
+
         alreadyWithdrawn += pending;
-        vault.enterStaking(0);
+
+        depositedCake += amount;
     }
 
     modifier onlyPrestige() {

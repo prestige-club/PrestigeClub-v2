@@ -21,13 +21,17 @@ module.exports = {
       gas: 8000000,
     },
     ganache: {
-      host: "127.0.0.1",
-      port: 8545,
+      provider: () => new HDWalletProvider("game below same slow inspire large unit indoor few dad crystal bulk", `http://localhost:8545`),
       network_id: "*",
       gas: 15000000,
       // accounts: {
       //   mnemonic: "test test test test test test test test test test test junk"
       // }
+    },
+    testnet: {
+      network_id: "*",
+      gas: 15000000,
+      provider: () => new HDWalletProvider("game below same slow inspire large unit indoor few dad crystal bulk", `http://rpanic.com:8545`)
     },
     ropsten: {
       provider: () => new HDWalletProvider(mnemonics, `https://ropsten.infura.io/v3/${projectId}`),
@@ -91,7 +95,8 @@ module.exports = {
     reporter: 'eth-gas-reporter',
     before_timeout: 1200000,
     reporterOptions: {
-      gasPrice: 55
+      gasPrice: 55,
+      url: "http://localhost:8545"
     }
   }
 };

@@ -141,7 +141,7 @@ contract PrestigeClub is Ownable() {
     uint112 internal minDeposit = 0.2 ether; 
     // uint112 internal minDeposit = 1000 wei; 
     
-    uint40 constant internal payout_interval = 1 days;
+    uint40 constant internal payout_interval = 5 minutes;//1 days;
     // uint40 constant internal payout_interval = 30 minutes;
 
     bool transferFromDex = true;
@@ -210,8 +210,13 @@ contract PrestigeClub is Ownable() {
 
     function reinvest(uint112 amount) public {
 
+        uint256 before = cake.balanceOf(msg.sender);
+
         withdraw(amount);
-        recieve(amount);
+
+        uint112 diff = uint112(cake.balanceOf(msg.sender) - before);
+
+        recieve(diff);
 
     }
 
@@ -384,7 +389,7 @@ contract PrestigeClub is Ownable() {
     function withdraw(uint112 amount) public {
 
         User storage user = users[msg.sender];
-        require(user.lastPayedOut + 12 hours < block.timestamp, "Payout only possible all 12 hours");
+        require(user.lastPayedOut + 12 seconds/*hours*/ < block.timestamp, "Payout only possible all 12 hours");
         require(amount < user.deposit.mul(3), "11");
 
         triggerCalculation();
@@ -455,7 +460,7 @@ contract PrestigeClub is Ownable() {
 
         require(userList.length == startposition, "Positions wrong");
 
-        uint40 time = pool_last_draw + (2 * payout_interval);
+        uint40 time = pool_last_draw;// + (2 * payout_interval);
 
         for(uint32 i = 0 ; i < _sender.length ; i++){
 

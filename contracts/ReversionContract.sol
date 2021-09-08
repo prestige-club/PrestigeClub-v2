@@ -33,12 +33,15 @@ contract ReversionContract is Ownable {
     uint256 duration;
     uint256 DUST = 100000;
 
+    event Withdraw(address indexed user, uint256 amount);
+
     constructor(address cakeVault, address _cake, uint32 _duration /*170 days or 365 days*/) public {
         start = block.timestamp;
         vault = CakeVault(cakeVault);
         cake = IERC20(_cake);
 
         duration = _duration;
+        lastWithdraw = block.timestamp;
     }
 
     function _withdrawRewards() internal {
@@ -56,11 +59,19 @@ contract ReversionContract is Ownable {
         return eligible;
     }
 
+    function pendingRewardsBO(address user) external view returns (uint256){
+        uint256 alreadyWithdrawn = users[user].withdrawn;
+        uint256 pending = vault.pendingCake(0, address(this));
+        uint256 totalForUser = (totalRewards + pending) * users[user].deposit / sumDeposits;
+        uint256 eligible = totalForUser - alreadyWithdrawn;
+        return eligible * 85 / 100; //Provision
+    }
+
     //Only external
     function estimateDailyRewards(address user) public view returns (uint256) {
         uint256 pending = vault.pendingCake(0, address(this));
         uint256 total = pending * (1 days * 1 ether / (block.timestamp - lastWithdraw)) / 1 ether;
-        return total * users[user].deposit / sumDeposits;
+        return (total * users[user].deposit / sumDeposits) * 85 / 100;
     }
 
     function withdrawRewards() public {
@@ -75,6 +86,9 @@ contract ReversionContract is Ownable {
             uint256 provision = eligible * 15 / 100;
             ownerProvision += provision;
 
+            users[msg.sender].withdrawn = users[msg.sender].withdrawn + eligible;
+
+            emit Withdraw(msg.sender, eligible - provision);
             cake.transfer(msg.sender, eligible - provision);
         }
     }
@@ -92,6 +106,16 @@ contract ReversionContract is Ownable {
         for(uint32 i = 0 ; i < _users.length ; i++){
             users[_users[i]].deposit = userCakes[i];
             sumDeposits += userCakes[i];
+        }
+    }
+
+    function updateUser(address user, uint256 userCakes) external onlyOwner {
+        uint256 deposit = users[user].deposit;
+        users[user].deposit = userCakes;
+        if(deposit < userCakes){
+            sumDeposits += (userCakes - deposit);
+        }else if(deposit > userCakes){
+            sumDeposits -= (deposit - userCakes);
         }
     }
 

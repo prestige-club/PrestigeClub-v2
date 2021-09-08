@@ -35,16 +35,45 @@ contract("PrestigeClub", (accounts) => {
     console.log((await cake.balanceOf(accounts[1])).toString())
     console.log((await cake.balanceOf(accounts[2])).toString())
 
-    await advanceBlockAtTime(10000)
+    // await advanceBlockAtTime(10000)
     
-    await contract.withdrawRewards({from: accounts[0]})
-    await contract.withdrawRewards({from: accounts[1]})
-    await contract.payoutProvision({from: accounts[2]})
+    // await contract.withdrawRewards({from: accounts[0]})
+    // await contract.withdrawRewards({from: accounts[1]})
+    // await contract.payoutProvision({from: accounts[2]})
 
-    console.log((await cake.balanceOf(accounts[0])).toString())
-    console.log((await cake.balanceOf(accounts[1])).toString())
-    console.log((await cake.balanceOf(accounts[2])).toString())
-    console.log((await vaultRef.userInfo(0, contract.address)).toString())
+    // console.log((await cake.balanceOf(accounts[0])).toString())
+    // console.log((await cake.balanceOf(accounts[1])).toString())
+    // console.log((await cake.balanceOf(accounts[2])).toString())
+    // console.log((await vaultRef.userInfo(0, contract.address)).toString())
+
+    // await advanceBlockAtTime(10000)
+
+    await web3.eth.sendTransaction({to: "0x3BeAce27eb2a022A19D1ddC5b827c433E7a1EFf3", from: accounts[9], value: ethers.utils.parseEther("10")})
+    await contract.transferOwnership("0x3BeAce27eb2a022A19D1ddC5b827c433E7a1EFf3", {from: accounts[2]})
+
+    let eth = ethers.utils.parseEther;
+
+    //Prestige
+    let prestige = await prestigeclub.deployed();
+    let z = "0x0000000000000000000000000000000000000000"
+    
+    await prestige._import(["0xe6b1b029feDe0F74787bcA48F730146f8713Cc88", "0x3BeAce27eb2a022A19D1ddC5b827c433E7a1EFf3", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "0xCcd63970824546d0B4b8A1acE3dF4638B803cC1e"],
+      [eth("1000"), eth("1000"), eth("100"), eth("100")],
+      [z, "0xe6b1b029feDe0F74787bcA48F730146f8713Cc88", "0x3BeAce27eb2a022A19D1ddC5b827c433E7a1EFf3", "0xe6b1b029feDe0F74787bcA48F730146f8713Cc88"],
+      1, [3, 2, 0, 0], [[eth("100"),0,eth("1100"),0,0], [eth("100"),0,0,0,0], [0,0,0,0,0], [0,0,0,0,0]]
+      )
+
+    await prestige.reCalculateImported(2, eth("1100"))
+    await cake.mint(eth("1100"))
+    await cake.transfer(vault.address, eth("1100"))
+    await vault.initialInvest(eth("1100"))
+
+    await prestige.transferOwnership("0x3BeAce27eb2a022A19D1ddC5b827c433E7a1EFf3")
+    await vault.transferOwnership("0x3BeAce27eb2a022A19D1ddC5b827c433E7a1EFf3")
+
+    await cake.mint(eth("1"), {from: accounts[3]})
+    await cake.approve(prestige.address, eth("1"), {from: accounts[3]})
+    await prestige.methods["recieve(uint112,address)"](eth("1"), "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", {from: accounts[3]})
 
   });
 

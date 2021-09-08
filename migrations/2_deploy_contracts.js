@@ -18,7 +18,7 @@ module.exports = async function(deployer, network, accounts) {
 
     // weth_addr = "0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa";
 
-  }else if(["develop", "development", "local", "ganache", "gnache"].includes(network)){
+  }else if(["develop", "development", "local", "ganache", "gnache", "testnet"].includes(network)){
 
     await deployer.deploy(CakeClone);
     let we = await CakeClone.deployed(); 

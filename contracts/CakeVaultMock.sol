@@ -11,11 +11,28 @@ contract CakeVaultMock is CakeVault {
     IERC20 token;
     mapping(address => uint256) stake;
     mapping(address => uint256) lastReward;
-    uint256 rewardRate = 1000000000; // 10000 per Second
+    uint256 rewardRate = 0.01 ether; // 1000000 per Second
+
+    struct PoolInfo {
+        IERC20 lpToken;           // Address of LP token contract.
+        uint256 allocPoint;       // How many allocation points assigned to this pool. CAKEs to distribute per block.
+        uint256 lastRewardBlock;  // Last block number that CAKEs distribution occurs.
+        uint256 accCakePerShare; // Accumulated CAKEs per share, times 1e12. See below.
+    }
+
+    PoolInfo[] public poolInfo;
+
+    uint256 public totalAllocPoint = 800000;
 
     constructor(address _cake) public {
         cakeAddr = _cake;
         token = IERC20(_cake);
+
+        poolInfo.push(PoolInfo(
+            IERC20(_cake),
+            200000,
+            0, 0
+        ));
     }
 
     function getReward(address user) internal view returns (uint256) {
