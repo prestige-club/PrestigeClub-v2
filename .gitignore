@@ -13,3 +13,4 @@ formattings/
 benchmark.txt
 *flattened.sol
 migrations_old/
+chaindata/

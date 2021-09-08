@@ -1,0 +1,11 @@
+{
+  "name": "hardhat-project",
+  "devDependencies": {
+    "hardhat": "^2.6.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.3.0",
+    "@truffle/hdwallet-provider": "^1.4.3",
+    "eth-gas-reporter": "^0.2.22"
+  }
+}
