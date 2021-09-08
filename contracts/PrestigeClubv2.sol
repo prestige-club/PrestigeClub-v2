@@ -1,4 +1,4 @@
-pragma solidity 0.6.8;
+pragma solidity >=0.6.0 <0.8.0;
 
 import "./libraries/PrestigeClubCalculations.sol";
 import "./libraries/SafeMath112.sol";
@@ -9,6 +9,12 @@ import "./Ownable.sol";
 
 interface IPDex{
     function prestigeDeposit(uint256 amountIn) external;
+}
+
+interface PrestigeVault {
+    function invest() external;
+    function withdraw(uint256 peth, address to) external;
+    function cake() external returns (address);
 }
 
 //Restrictions:
@@ -83,14 +89,16 @@ contract PrestigeClub is Ownable() {
     
     uint40 public pool_last_draw;
 
-    IERC20 peth;
+    PrestigeVault cakeClub;
+    IERC20 cake;
     
-    constructor(address erc20Adr) public {
+    constructor(address cakeConnector) public {
  
         uint40 timestamp = uint40(block.timestamp);
-        pool_last_draw = timestamp - (timestamp % payout_interval) - (2 * payout_interval);
+        pool_last_draw = timestamp - (timestamp % payout_interval);// - (2 * payout_interval);
 
-        peth = IERC20(erc20Adr);
+        cakeClub = PrestigeVault(cakeConnector);
+        cake = IERC20(cakeClub.cake());
 
         //Definition of the Pools and DownlineBonuses with their respective conditions and percentages. 
         //Note, values are not final, adapted for testing purposes
@@ -145,13 +153,9 @@ contract PrestigeClub is Ownable() {
         
         address sender = msg.sender;
 
-        //Transfer Ether from Dex to owner
-        if(transferFromDex){
-            IPDex(address(peth)).prestigeDeposit(amount);
-        }
-
         //Transfer peth
-        peth.transferFrom(sender, address(this), amount);
+        cake.transferFrom(sender, address(cakeClub), amount);
+        cakeClub.invest();
 
         bool userExists = user.position != 0;
         
@@ -288,7 +292,7 @@ contract PrestigeClub is Ownable() {
     }
     
     function triggerCalculation() public { 
-        if(block.timestamp > pool_last_draw + payout_interval){
+        while(block.timestamp > pool_last_draw + payout_interval){  //TODO Possible issue of unusability when not used for x days and therefore Out of Gas issue
             pushPoolState();
         }
     }
@@ -393,11 +397,12 @@ contract PrestigeClub is Ownable() {
         user.lastPayedOut = uint40(block.timestamp);
 
         //Mint if necessary
-        if(peth.balanceOf(address(this)) < amount){
-            peth.mint(uint256(amount));
-        }
-        
-        peth.transfer(msg.sender, amount);
+        // if(peth.balanceOf(address(this)) < amount){
+        //     peth.mint(uint256(amount));
+        // }
+        // peth.transfer(msg.sender, amount);
+
+        cakeClub.withdraw(amount, msg.sender);
         
         totalWithdrawn += amount;
         emit Withdraw(msg.sender, amount);
@@ -486,10 +491,6 @@ contract PrestigeClub is Ownable() {
             }
 
         }
-    }
-
-    function setPeth(address erc20adr) external onlyOwner {
-        peth = IERC20(erc20adr);
     }
 
     //0.44 KB

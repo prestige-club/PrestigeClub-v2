@@ -1,4 +1,4 @@
-pragma solidity 0.6.8;
+pragma solidity ^0.6.3;
 
 // SPDX-License-Identifier: MIT
 

@@ -20,11 +20,14 @@ module.exports = {
       network_id: "*",
       gas: 8000000,
     },
-    gnache: {
+    ganache: {
       host: "127.0.0.1",
-      port: 7545,
+      port: 8545,
       network_id: "*",
-      gas: 8000000,
+      gas: 15000000,
+      // accounts: {
+      //   mnemonic: "test test test test test test test test test test test junk"
+      // }
     },
     ropsten: {
       provider: () => new HDWalletProvider(mnemonics, `https://ropsten.infura.io/v3/${projectId}`),
@@ -81,8 +84,8 @@ module.exports = {
   plugins: [
     // 'truffle-plugin-verify',
     // 'truffle-plugin-blockscout-verify',
-    "truffle-source-verify",
-    "truffle-contract-size"
+    // "truffle-source-verify",
+    // "truffle-contract-size"
   ],
   mocha: {
     reporter: 'eth-gas-reporter',

@@ -1,13 +1,13 @@
 const PrestigeClub = artifacts.require("PrestigeClub");
-const PEthDex = artifacts.require("PEthDex");
 const Seller = artifacts.require("AccountExchange");
 const WETH = artifacts.require("WETH");
 
 module.exports = async function(deployer, network, accounts) {
 
-    let pc = await PrestigeClub.at("0x3211096255950aCE4b4D89adc94fc0fE17e0AEfc")
-    // let pc = await PrestigeClub.deployed()
+    // let pc = await PrestigeClub.at("0x3211096255950aCE4b4D89adc94fc0fE17e0AEfc")
+    let pc = await PrestigeClub.deployed()
 
+    /*
     let weth_addr = "";
     if(network == "mumbai"){
 
@@ -29,6 +29,6 @@ module.exports = async function(deployer, network, accounts) {
 
     let seller = await Seller.deployed()
     await pc.setSellingContract(seller.address);
-    console.log("Seller: " + seller.address);
+    console.log("Seller: " + seller.address);*/
 
 }
